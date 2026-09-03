@@ -8,6 +8,8 @@ import {
   Search,
   AlertTriangle,
   CheckCircle2,
+  ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import { ConnectionState, TVDeviceInfo } from '../types/tv.types.ts';
 
@@ -140,6 +142,18 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
             <option value={8002}>8002 (WSS - Verified)</option>
             <option value={8001}>8001 (WS - Legacy)</option>
           </select>
+          {port === 8002 && ip.trim() && (
+            <a
+              href={`https://${ip.trim()}:8002/api/v2/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Click to accept TV's self-signed SSL cert in your browser"
+              className="mt-1 text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold"
+            >
+              <span>Accept SSL</span>
+              <ExternalLink className="w-2.5 h-2.5" />
+            </a>
+          )}
         </div>
 
         <div className="sm:col-span-4 flex items-end gap-2 pt-1 sm:pt-5">

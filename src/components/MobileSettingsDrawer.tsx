@@ -16,6 +16,7 @@ import {
   Check,
   Radio,
   Clock,
+  ExternalLink,
 } from 'lucide-react';
 import {
   ConnectionState,
@@ -539,6 +540,29 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* SSL Certificate & Port 8002 Helper */}
+                {port === 8002 && ip.trim() && (
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400">TV SSL Certificate:</span>
+                      <a
+                        href={`https://${ip.trim()}:8002/api/v2/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1"
+                      >
+                        <span>Accept SSL (1-Click)</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                    {connectionState === 'ERROR' && (
+                      <p className="text-[10px] text-rose-300 mt-1 bg-rose-950/40 p-2 rounded-lg border border-rose-900/50">
+                        Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. "Accept SSL" linkine tıklayıp "Gelişmiş" $\rightarrow$ "İlerle (güvensiz)" diyerek sertifikayı kabul edin, ardından tekrar bağlanın.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

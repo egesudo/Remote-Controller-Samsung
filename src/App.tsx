@@ -9,6 +9,9 @@ import {
   Search,
   Youtube,
   Mic,
+  ExternalLink,
+  AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import {
   tvController,
@@ -201,16 +204,84 @@ export default function App() {
 
       {/* Main Workspace */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 space-y-4">
-        {/* Error notification banner if any */}
+        {/* Error notification & guided troubleshooting banner */}
         {errorMessage && (
-          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex items-center justify-between shadow-xs">
-            <span className="font-medium">{errorMessage}</span>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="text-rose-500 hover:text-rose-700 font-bold ml-4 cursor-pointer"
-            >
-              Dismiss
-            </button>
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs shadow-xs space-y-3 animate-fade-in">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-rose-950 block text-xs mb-0.5">Connection Issue Detected</span>
+                  <span className="text-rose-800">{errorMessage}</span>
+                </div>
+              </div>
+              <button
+                id="btn-dismiss-error"
+                onClick={() => setErrorMessage(null)}
+                className="text-rose-500 hover:text-rose-800 font-bold px-2 py-1 bg-rose-100/60 hover:bg-rose-100 rounded-lg cursor-pointer shrink-0 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            {/* If the error relates to WSS or connection failure on port 8002 */}
+            {(errorMessage.includes('8002') || errorMessage.includes('SSL') || errorMessage.includes('connect')) && (
+              <div className="p-3 bg-white/90 border border-rose-200 rounded-xl space-y-2.5 text-slate-800">
+                <div className="font-bold text-indigo-950 flex items-center gap-1.5 text-xs">
+                  <HelpCircle className="w-4 h-4 text-indigo-600" />
+                  <span>3 Adımda Bağlantıyı Tamamlama (Samsung TV & Tarayıcı Güvenliği)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
+                  {/* Step 1 */}
+                  <div className="p-2.5 bg-indigo-50/50 border border-indigo-100 rounded-lg space-y-1.5 flex flex-col justify-between">
+                    <div>
+                      <span className="font-bold text-indigo-900 block">1. TV SSL Sertifikasını Onaylayın</span>
+                      <p className="text-slate-600">
+                        Tarayıcılar TV'nin kendinden imzalı SSL sertifikasını varsayılan olarak engeller. Tek seferlik izin vermeniz gerekir.
+                      </p>
+                    </div>
+                    <a
+                      href={`https://${ip.trim()}:8002/api/v2/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-[11px] transition-colors shadow-xs"
+                    >
+                      <span>Sertifika Sayfasını Aç</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-bold text-slate-900 block">2. Tarayıcıda İlerleyin</span>
+                    <p className="text-slate-600">
+                      Açılan yeni sekmede <strong>"Gelişmiş" (Advanced)</strong> butonuna, ardından <strong>"{ip.trim()} sitesine ilerle (güvensiz)"</strong> seçeneğine tıklayın.
+                    </p>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-bold text-slate-900 block">3. TV Ayarını Kontrol Edin</span>
+                    <p className="text-slate-600">
+                      TV Menüsü $\rightarrow$ Genel $\rightarrow$ Harici Cihaz Yöneticisi $\rightarrow$ <strong>Erişim Bildirimi</strong>: "İlk Seferde" olmalıdır. TV açık olmalıdır.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">
+                    Sertifikayı onayladıktan sonra sekmeyi kapatıp aşağıdaki "TV'ye Bağlan" butonuna tekrar basabilirsiniz.
+                  </span>
+                  <button
+                    onClick={handleConnect}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+                  >
+                    Tekrar Bağlan
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -30,6 +30,7 @@ interface VoiceRemoteModalProps {
   onClose: () => void;
   connectionState: ConnectionState;
   activeTvName: string;
+  onConnect?: () => void;
 }
 
 export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
@@ -37,6 +38,7 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
   onClose,
   connectionState,
   activeTvName,
+  onConnect,
 }) => {
   const [selectedLanguage, setSelectedLanguage] = useState<'en-US' | 'tr-TR'>('tr-TR');
   const [useAI, setUseAI] = useState<boolean>(true);
@@ -183,6 +185,16 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
               <span className={isConnected ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
                 {isConnected ? 'TV Bağlı (Hazır)' : 'TV Bağlı Değil'}
               </span>
+              {!isConnected && onConnect && (
+                <button
+                  id="btn-voice-modal-quick-connect"
+                  onClick={() => onConnect()}
+                  className="ml-2 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-[11px] transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <Power className="w-3 h-3" />
+                  <span>Şimdi Bağlan</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -291,7 +303,7 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
               <input
                 id="input-voice-text"
                 type="text"
-                placeholder='ör. "sesi 3 kademe artır", "sesi aç", "youtube aç", "kanalı değiştir", "sessize al"'
+                placeholder='ör. "Televizyonu aç", "Sesi 10 birim artır", "Sesi 5 birim kıs", "YouTube aç", "Kanalı değiştir"'
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
                 onKeyDown={(e) => {
@@ -346,14 +358,18 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
                   </div>
                 </div>
 
-                {/* 2. AI Intent */}
+                {/* 2. AI & Semantic Intent */}
                 <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div className="text-[10px] text-slate-400 uppercase font-mono mb-1">2. YZ Niyeti</div>
+                  <div className="text-[10px] text-slate-400 uppercase font-mono mb-1">2. Semantik / YZ</div>
                   <div className="font-semibold text-indigo-300 truncate">
                     {currentResult.intent.actionType}
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono truncate">
-                    {currentResult.intent.youtubeQuery ? `"${currentResult.intent.youtubeQuery}"` : currentResult.intent.source}
+                    {currentResult.intent.semanticCategory
+                      ? `Semantik: ${currentResult.intent.semanticCategory}`
+                      : currentResult.intent.youtubeQuery
+                      ? `"${currentResult.intent.youtubeQuery}"`
+                      : currentResult.intent.source}
                   </div>
                 </div>
 
@@ -451,10 +467,28 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
             </span>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => handleQuickCommand('sesi 3 kademe artır')}
+                onClick={() => handleQuickCommand('televizyonu aç')}
+                className="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-xs text-emerald-300 border border-emerald-800/60 flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>⏻ "Televizyonu aç"</span>
+              </button>
+              <button
+                onClick={() => handleQuickCommand('sesi 10 birim artır')}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
               >
-                🔊 "Sesi 3 kademe artır"
+                🔊 "Sesi 10 birim artır"
+              </button>
+              <button
+                onClick={() => handleQuickCommand('sesi 5 birim kıs')}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
+              >
+                🔉 "Sesi 5 birim kıs"
+              </button>
+              <button
+                onClick={() => handleQuickCommand('kanalı değiştir')}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
+              >
+                📺 "Kanalı değiştir"
               </button>
               <button
                 onClick={() => handleQuickCommand('YouTube üzerinde Tarkan çal')}
@@ -464,35 +498,10 @@ export const VoiceRemoteModal: React.FC<VoiceRemoteModalProps> = ({
                 <span>▶️ "YouTube üzerinde Tarkan çal"</span>
               </button>
               <button
-                onClick={() => handleQuickCommand('YouTube 4K doğa videoları ara')}
-                className="px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-xs text-red-300 border border-red-800/60 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Youtube className="w-3.5 h-3.5 text-red-400" />
-                <span>🔍 "YouTube 4K doğa videoları"</span>
-              </button>
-              <button
-                onClick={() => handleQuickCommand('sesi aç')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
-              >
-                🔊 "Sesi aç"
-              </button>
-              <button
                 onClick={() => handleQuickCommand('sesi kapat')}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
               >
                 🔇 "Sesi kapat (Sessiz)"
-              </button>
-              <button
-                onClick={() => handleQuickCommand('sonraki kanal')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
-              >
-                📺 "Sonraki kanal"
-              </button>
-              <button
-                onClick={() => handleQuickCommand('önceki kanal')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700/80 cursor-pointer"
-              >
-                📺 "Önceki kanal"
               </button>
               <button
                 onClick={() => handleQuickCommand('televizyonu kapat')}

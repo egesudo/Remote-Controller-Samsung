@@ -294,14 +294,20 @@ export class VoiceCommandBridge {
 
     // 5. Handle Single Key or Key Sequences (e.g. Volume Up, Mute, Channel Down)
     if (intent.actionType === 'SEND_KEY' || intent.actionType === 'KEY_SEQUENCE') {
-      const requestedKeys = intent.requestedKeys || [];
+      let requestedKeys = intent.requestedKeys || [];
+
+      // Expand single key with repeatCount into sequence (e.g. "sesi 10 kademe arttır" -> 10 x KEY_VOLUP)
+      if (intent.repeatCount && intent.repeatCount > 1 && requestedKeys.length === 1) {
+        const count = Math.min(intent.repeatCount, 15);
+        requestedKeys = Array(count).fill(requestedKeys[0]);
+      }
 
       if (requestedKeys.length === 0) {
         return {
           intent,
           isValid: false,
           securityViolation: false,
-          rejectionReason: 'Intent contains no target keys.',
+          rejectionReason: 'Niyet herhangi bir hedef tuş içermiyor.',
           validatedKeys: [],
           executed: false,
           timestamp,
@@ -317,11 +323,11 @@ export class VoiceCommandBridge {
         if (!validation.isValid || !validation.sanitizedKey) {
           const violationMsg =
             validation.error ||
-            `Security Violation: Key '${key}' is not in the authorized TV remote whitelist.`;
+            `Güvenlik Engeli: '${key}' tuşu izinli TV kumanda listesinde yer almıyor.`;
 
           this.controller.log(
             'error',
-            `[VOICE GATE BLOCKED] ${violationMsg} (Spoken: "${intent.rawTranscript}")`
+            `[SESLİ GEÇİT ENGELLENDİ] ${violationMsg} (Söylenen: "${intent.rawTranscript}")`
           );
 
           return {
@@ -341,16 +347,38 @@ export class VoiceCommandBridge {
       // If we got here, every requested key has passed whitelist validation!
       this.controller.log(
         'info',
-        `[VOICE GATE PASSED] Verified ${validatedKeys.length} key(s) [${validatedKeys.join(
-          ', '
-        )}] against strict whitelist for voice command "${intent.rawTranscript}"`
+        `[SESLİ GEÇİT ONAYLANDI] ${validatedKeys.length} tuş [${validatedKeys[0]}${
+          validatedKeys.length > 1 ? ` x${validatedKeys.length}` : ''
+        }] beyaz listeden geçti. (Söylenen: "${intent.rawTranscript}")`
       );
 
-      // Check if TV is connected
-      const connectionState = this.controller.getConnectionState();
+      // Check if TV is connected. If KEY_POWER requested and disconnected, attempt auto-connect
+      let connectionState = this.controller.getConnectionState();
+      if (connectionState !== 'CONNECTED' && validatedKeys.includes('KEY_POWER')) {
+        const config = this.controller.getConfig();
+        if (config?.host) {
+          this.controller.log(
+            'info',
+            `[SESLİ GEÇİT] TV kapalı/bağlantısız (${connectionState}). 'KEY_POWER' için soket bağlantısı deneniyor...`
+          );
+          try {
+            await Promise.race([
+              this.controller.connect(config),
+              new Promise((r) => setTimeout(r, 1200)),
+            ]);
+            connectionState = this.controller.getConnectionState();
+          } catch {
+            // will handle below
+          }
+        }
+      }
+
       if (connectionState !== 'CONNECTED') {
-        const connMsg = `Cannot dispatch voice keys: TV is currently ${connectionState}. Please connect to TV first.`;
-        this.controller.log('warn', `[VOICE GATE] ${connMsg}`);
+        const connMsg = validatedKeys.includes('KEY_POWER')
+          ? `TV şu anda bağlı değil (Durum: ${connectionState}). TV bekleme (standby) modunda olduğunda yerel ağ soketi kapalı olabilir. Lütfen TV'nin açık olduğundan emin olun veya 'Bağlan' butonunu kullanın.`
+          : `TV bağlantısı aktif değil (Durum: ${connectionState}). Komutun TV'ye iletilebilmesi için lütfen önce 'Bağlan' butonuna basın.`;
+        
+        this.controller.log('warn', `[SESLİ GEÇİT] ${connMsg}`);
 
         return {
           intent,
@@ -373,13 +401,13 @@ export class VoiceCommandBridge {
           const success = await this.controller.sendKey(key);
           if (!success) {
             allSucceeded = false;
-            executionError = `Failed to transmit ${key} over WebSocket.`;
+            executionError = `${key} komutu TV soketine iletilemedi.`;
             break;
           }
 
-          // Small inter-key delay for sequences (e.g. volume + 3 times)
+          // Small inter-key delay for sequences (e.g. volume + 10 times)
           if (i < validatedKeys.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 180));
+            await new Promise((resolve) => setTimeout(resolve, 120));
           }
         }
       } catch (err) {

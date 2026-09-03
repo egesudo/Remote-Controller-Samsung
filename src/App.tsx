@@ -594,6 +594,7 @@ export default function App() {
           onClose={() => setIsVoiceAssistantOpen(false)}
           connectionState={connectionState}
           activeTvName={activeTv?.customName || activeTv?.name || ip}
+          onConnect={handleConnect}
         />
       </main>
     </div>

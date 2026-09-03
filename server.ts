@@ -725,23 +725,24 @@ ACTION TYPES & MAPPING RULES:
 
 2. TV Controls (Volume, Channel, Navigation, Media, Power):
    - Volume:
-     - Volume up ("turn up volume", "louder", "sesi aç", "sesi 3 kere artır") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLUP', ...], repeatCount: N
-     - Volume down ("turn down volume", "quieter", "sesi kıs") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLDOWN', ...], repeatCount: N
-     - Mute ("mute", "unmute", "silence", "sesi kapat", "sessize al") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_MUTE']
+     - Volume up ("turn up volume", "louder", "sesi aç", "sesi 10 birim artır", "sesi 10 birim arttır", "sesi 3 kere artır", "sesi 10 kademe arttır", "sesi 10 kademe artır", "sesi 5 kademe yükselt", "ses artır", "sesi arttır") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLUP', ...], repeatCount: N
+     - Volume down ("turn down volume", "quieter", "sesi kıs", "sesi 10 birim azalt", "sesi 5 birim kıs", "sesi 10 kademe azalt", "sesi 5 kademe kıs", "sesi düşür") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLDOWN', ...], repeatCount: N
+     - Mute ("mute", "unmute", "silence", "sesi kapat", "sesi kes", "sessize al") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_MUTE']
    - Channels:
-     - Next channel ("channel up", "next channel", "sonraki kanal") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_CHUP']
+     - Next channel ("channel up", "next channel", "sonraki kanal", "kanalı değiştir", "kanal değiştir") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_CHUP']
      - Previous channel ("channel down", "previous channel", "önceki kanal") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_CHDOWN']
    - Navigation:
-     - Home / Smart Hub ("go home", "main menu", "ana menü") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_HOME']
-     - Back / Return ("go back", "return", "geri dön") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_RETURN']
-     - Enter / Select ("select", "OK", "enter", "tamam", "seç") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_ENTER']
-     - Directional D-Pad ("up", "down", "left", "right") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_UP' | 'KEY_DOWN' | 'KEY_LEFT' | 'KEY_RIGHT']
+     - Home / Smart Hub ("go home", "main menu", "ana menü", "ana sayfa", "menü") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_HOME']
+     - Back / Return ("go back", "return", "geri dön", "geri git", "çıkış") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_RETURN']
+     - Enter / Select ("select", "OK", "enter", "tamam", "seç", "onayla") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_ENTER']
+     - Directional D-Pad ("up", "down", "left", "right", "yukarı", "aşağı", "sol", "sağ") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_UP' | 'KEY_DOWN' | 'KEY_LEFT' | 'KEY_RIGHT']
    - Media:
      - Play ("play", "resume", "oynat", "başlat") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_PLAY']
      - Pause ("pause", "durdur", "duraklat") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_PAUSE']
      - Stop ("stop", "tamamen durdur") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_STOP']
    - Power:
-     - Power off / on ("turn off the TV", "power off", "televizyonu kapat") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_POWER']
+     - Power on ("turn on the TV", "power on", "turn on", "televizyonu aç", "televizyon aç", "tv aç", "tv'yi aç", "ekranı aç") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_POWER']
+     - Power off ("turn off the TV", "power off", "turn off", "televizyonu kapat", "tv kapat", "kapat") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_POWER']
 
 3. Security Rejection (Malicious, Unrestricted, or Non-TV requests):
    - Any request to format the TV, run bash/shell scripts, execute arbitrary code, open arbitrary URLs or unapproved apps, download malware, or perform non-TV operations:

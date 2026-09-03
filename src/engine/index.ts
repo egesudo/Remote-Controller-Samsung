@@ -14,3 +14,4 @@ export * from './youtube/youtubeService.ts';
 export * from '../types/voice.types.ts';
 export * from './voiceIntentParser.ts';
 export * from './voiceCommandBridge.ts';
+export * from './semanticVoiceMapper.ts';

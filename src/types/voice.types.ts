@@ -8,7 +8,7 @@ export type VoiceActionType =
   | 'YOUTUBE_PLAY'
   | 'REJECTED';
 
-export type VoiceIntentSource = 'gemini_ai' | 'deterministic_rule' | 'manual_test';
+export type VoiceIntentSource = 'gemini_ai' | 'deterministic_rule' | 'semantic_mapping' | 'manual_test';
 
 export interface StructuredVoiceIntent {
   rawTranscript: string;
@@ -22,6 +22,8 @@ export interface StructuredVoiceIntent {
   intentExplanation: string;
   confidence: number;
   source: VoiceIntentSource;
+  semanticCategory?: string;
+  unitCount?: number;
 }
 
 export interface VoiceValidationPipelineResult {

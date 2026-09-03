@@ -54,10 +54,10 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
         <div>
           <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <Radio className="w-5 h-5 text-indigo-600" />
-            Remote Control Pad
+            Uzaktan Kumanda Tuş Takımı
           </h2>
           <p className="text-xs text-slate-500">
-            Validated commands transmitted directly over Secure WebSocket (WSS 8002)
+            Doğrulanmış komutlar doğrudan Güvenli WebSocket (WSS 8002) üzerinden iletilir
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
           id="btn-key-power"
           onClick={() => handlePress('KEY_POWER')}
           disabled={!isConnected}
-          title="Send KEY_POWER"
+          title="Güç Tuşu (KEY_POWER)"
           className={`min-h-[44px] px-4 flex items-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
             activeKey === 'KEY_POWER'
               ? 'bg-rose-700 text-white scale-95'
@@ -74,7 +74,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
           }`}
         >
           <Power className="w-4 h-4" />
-          <span>Power</span>
+          <span>Aç / Kapat</span>
         </button>
       </div>
 
@@ -82,7 +82,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
         {/* Navigation / D-Pad Section */}
         <div className="lg:col-span-6 flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
           <span className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wider">
-            Navigation (D-Pad)
+            Yön Tuşları (D-Pad)
           </span>
 
           <div className="relative w-52 h-52 flex items-center justify-center">
@@ -94,7 +94,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-up"
               onClick={() => handlePress('KEY_UP')}
               disabled={!isConnected}
-              aria-label="Up"
+              aria-label="Yukarı"
               title="KEY_UP"
               className="absolute top-2 w-14 h-12 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-t-2xl transition-colors disabled:opacity-40 cursor-pointer"
             >
@@ -106,7 +106,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-down"
               onClick={() => handlePress('KEY_DOWN')}
               disabled={!isConnected}
-              aria-label="Down"
+              aria-label="Aşağı"
               title="KEY_DOWN"
               className="absolute bottom-2 w-14 h-12 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-b-2xl transition-colors disabled:opacity-40 cursor-pointer"
             >
@@ -118,7 +118,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-left"
               onClick={() => handlePress('KEY_LEFT')}
               disabled={!isConnected}
-              aria-label="Left"
+              aria-label="Sol"
               title="KEY_LEFT"
               className="absolute left-2 w-12 h-14 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-l-2xl transition-colors disabled:opacity-40 cursor-pointer"
             >
@@ -130,7 +130,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-right"
               onClick={() => handlePress('KEY_RIGHT')}
               disabled={!isConnected}
-              aria-label="Right"
+              aria-label="Sağ"
               title="KEY_RIGHT"
               className="absolute right-2 w-12 h-14 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:bg-slate-100 active:bg-slate-200 rounded-r-2xl transition-colors disabled:opacity-40 cursor-pointer"
             >
@@ -142,14 +142,14 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-enter"
               onClick={() => handlePress('KEY_ENTER')}
               disabled={!isConnected}
-              title="KEY_ENTER"
+              title="Tamam / Seç (KEY_ENTER)"
               className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-xs shadow-xs transition-all z-10 cursor-pointer disabled:opacity-40 ${
                 activeKey === 'KEY_ENTER'
                   ? 'bg-indigo-700 text-white scale-95'
                   : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white'
               }`}
             >
-              ENTER
+              TAMAM
             </button>
           </div>
 
@@ -159,22 +159,22 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
               id="btn-key-return"
               onClick={() => handlePress('KEY_RETURN')}
               disabled={!isConnected}
-              title="KEY_RETURN (Back)"
+              title="Geri (KEY_RETURN)"
               className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors disabled:opacity-40 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Back</span>
+              <span>Geri</span>
             </button>
 
             <button
               id="btn-key-home"
               onClick={() => handlePress('KEY_HOME')}
               disabled={!isConnected}
-              title="KEY_HOME (Smart Hub)"
+              title="Ana Menü / Smart Hub (KEY_HOME)"
               className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors disabled:opacity-40 cursor-pointer"
             >
               <Home className="w-4 h-4" />
-              <span>Home</span>
+              <span>Ana Menü</span>
             </button>
           </div>
         </div>
@@ -186,33 +186,36 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
             {/* Volume Column */}
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center">
               <span className="text-[11px] font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
-                <Volume2 className="w-3.5 h-3.5" /> Volume
+                <Volume2 className="w-3.5 h-3.5" /> Ses Kontrolü
               </span>
               <div className="flex flex-col gap-2 w-full max-w-[120px]">
                 <button
                   id="btn-key-volup"
                   onClick={() => handlePress('KEY_VOLUP')}
                   disabled={!isConnected}
+                  title="Sesi Arttır"
                   className={btnClass('KEY_VOLUP', 'py-3 font-bold text-sm')}
                 >
-                  VOL +
+                  SES +
                 </button>
                 <button
                   id="btn-key-mute"
                   onClick={() => handlePress('KEY_MUTE')}
                   disabled={!isConnected}
+                  title="Sesi Kapat / Aç"
                   className={btnClass('KEY_MUTE', 'py-2.5 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100')}
                 >
                   <VolumeX className="w-4 h-4 mr-1 inline" />
-                  Mute
+                  Sessiz
                 </button>
                 <button
                   id="btn-key-voldown"
                   onClick={() => handlePress('KEY_VOLDOWN')}
                   disabled={!isConnected}
+                  title="Sesi Azalt"
                   className={btnClass('KEY_VOLDOWN', 'py-3 font-bold text-sm')}
                 >
-                  VOL -
+                  SES -
                 </button>
               </div>
             </div>
@@ -220,27 +223,29 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
             {/* Channel Column */}
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center">
               <span className="text-[11px] font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
-                <Tv className="w-3.5 h-3.5" /> Channel
+                <Tv className="w-3.5 h-3.5" /> Kanal Kontrolü
               </span>
               <div className="flex flex-col gap-2 w-full max-w-[120px]">
                 <button
                   id="btn-key-chup"
                   onClick={() => handlePress('KEY_CHUP')}
                   disabled={!isConnected}
+                  title="Sonraki Kanal"
                   className={btnClass('KEY_CHUP', 'py-3 font-bold text-sm')}
                 >
-                  CH +
+                  KANAL +
                 </button>
                 <div className="py-2.5 text-center text-xs text-slate-400 font-mono">
-                  Channel
+                  Kanal
                 </div>
                 <button
                   id="btn-key-chdown"
                   onClick={() => handlePress('KEY_CHDOWN')}
                   disabled={!isConnected}
+                  title="Önceki Kanal"
                   className={btnClass('KEY_CHDOWN', 'py-3 font-bold text-sm')}
                 >
-                  CH -
+                  KANAL -
                 </button>
               </div>
             </div>
@@ -249,7 +254,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
           {/* Media Playback Controls */}
           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
             <span className="text-[11px] font-semibold text-slate-500 uppercase mb-2 block text-center">
-              Media Playback
+              Medya Oynatma
             </span>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -259,7 +264,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
                 className={btnClass('KEY_PLAY', 'gap-1')}
               >
                 <Play className="w-4 h-4" />
-                <span>Play</span>
+                <span>Oynat</span>
               </button>
               <button
                 id="btn-key-pause"
@@ -268,7 +273,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
                 className={btnClass('KEY_PAUSE', 'gap-1')}
               >
                 <Pause className="w-4 h-4" />
-                <span>Pause</span>
+                <span>Duraklat</span>
               </button>
               <button
                 id="btn-key-stop"
@@ -277,7 +282,7 @@ export const RemoteControlPad: React.FC<RemoteControlPadProps> = ({
                 className={btnClass('KEY_STOP', 'gap-1')}
               >
                 <Square className="w-3.5 h-3.5" />
-                <span>Stop</span>
+                <span>Durdur</span>
               </button>
             </div>
           </div>

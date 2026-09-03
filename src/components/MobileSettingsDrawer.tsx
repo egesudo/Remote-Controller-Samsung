@@ -113,10 +113,10 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
       if (res) {
         setProbeResult(res);
       } else {
-        setProbeError('No response from TV diagnostic endpoint (/api/v2/). Ensure TV is powered ON on local network.');
+        setProbeError('TV tanı uç noktasından (/api/v2/) yanıt alınamadı. TV\'nin açık ve yerel ağa bağlı olduğundan emin olun.');
       }
     } catch (e) {
-      setProbeError('Probe failed: ' + (e instanceof Error ? e.message : String(e)));
+      setProbeError('Sorgulama başarısız: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setProbing(false);
     }
@@ -176,7 +176,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
               <Tv className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-sm font-bold text-white">TV Management & Setup</h3>
+              <h3 className="text-sm font-bold text-white">TV Yönetimi & Bağlantı Ayarları</h3>
             </div>
             <button
               id="btn-close-settings"
@@ -198,7 +198,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
               }`}
             >
               <Tv className="w-3.5 h-3.5" />
-              <span>My TVs ({devices.length})</span>
+              <span>TV'lerim ({devices.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('discover')}
@@ -209,7 +209,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
               }`}
             >
               <Search className="w-3.5 h-3.5" />
-              <span>Discover</span>
+              <span>Ağda Ara</span>
             </button>
             <button
               onClick={() => setActiveTab('current')}
@@ -220,7 +220,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
               }`}
             >
               <Wifi className="w-3.5 h-3.5" />
-              <span>Direct IP</span>
+              <span>Doğrudan IP</span>
             </button>
           </div>
 
@@ -228,46 +228,46 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
           {activeTab === 'devices' && (
             <div className="space-y-3 py-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">Select active TV to control:</span>
+                <span className="text-xs font-semibold text-slate-400">Kumanda edilecek aktif TV'yi seçin:</span>
                 <button
                   onClick={() => setIsAddingManual(!isAddingManual)}
                   className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
-                  <span>Add IP</span>
+                  <span>IP Ekle</span>
                 </button>
               </div>
 
               {isAddingManual && (
                 <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-2 text-xs">
-                  <span className="font-bold text-white text-xs">Add New TV:</span>
+                  <span className="font-bold text-white text-xs">Yeni TV Ekle:</span>
                   <input
                     type="text"
-                    placeholder="TV IP (e.g. 192.168.1.65)"
+                    placeholder="TV IP (ör. 192.168.1.103)"
                     value={manualIp}
                     onChange={(e) => setManualIp(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-hidden focus:border-indigo-500"
                   />
                   <input
                     type="text"
-                    placeholder="Friendly Name (e.g. Bedroom TV)"
+                    placeholder="Özel İsim (ör. Salon TV)"
                     value={manualName}
                     onChange={(e) => setManualName(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-hidden focus:border-indigo-500"
                   />
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => setIsAddingManual(false)}
-                      className="px-2.5 py-1 text-slate-400 hover:text-white text-xs"
+                      className="px-2.5 py-1 text-slate-400 hover:text-white text-xs cursor-pointer"
                     >
-                      Cancel
+                      İptal
                     </button>
                     <button
                       onClick={handleSaveManual}
                       disabled={!manualIp.trim()}
-                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg"
+                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg cursor-pointer"
                     >
-                      Save & Switch
+                      Kaydet & Seç
                     </button>
                   </div>
                 </div>
@@ -295,12 +295,12 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                                 type="text"
                                 value={editingName}
                                 onChange={(e) => setEditingName(e.target.value)}
-                                className="w-full px-2 py-0.5 bg-slate-900 border border-indigo-500 rounded text-xs text-white"
+                                className="w-full px-2 py-0.5 bg-slate-900 border border-indigo-500 rounded text-xs text-white focus:outline-hidden"
                                 autoFocus
                               />
                               <button
                                 onClick={() => handleSaveRename(device.id)}
-                                className="p-1 text-emerald-400 hover:text-emerald-300"
+                                className="p-1 text-emerald-400 hover:text-emerald-300 cursor-pointer"
                               >
                                 <Check className="w-3.5 h-3.5" />
                               </button>
@@ -330,7 +330,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                           {isActive ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white flex items-center gap-1">
                               <Radio className="w-2.5 h-2.5 animate-pulse" />
-                              Active
+                              Aktif
                             </span>
                           ) : (
                             <button
@@ -339,7 +339,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                               }}
                               className="text-[11px] font-semibold px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white transition-colors cursor-pointer"
                             >
-                              Switch
+                              Seç
                             </button>
                           )}
 
@@ -347,7 +347,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                             <button
                               onClick={() => tvDeviceManager.removeDevice(device.id)}
                               className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
-                              title="Delete device"
+                              title="Cihazı Sil"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
@@ -358,10 +358,10 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
                         <span className="flex items-center gap-1">
                           <Key className="w-3 h-3 text-indigo-400" />
-                          {device.token ? 'Token Paired' : 'Not Paired'}
+                          {device.token ? 'Jeton Eşleşti' : 'Eşleşmedi'}
                         </span>
                         <span className="text-slate-500">
-                          {device.onlineStatus ? `Status: ${device.onlineStatus}` : 'TU8500 WSS'}
+                          {device.onlineStatus ? `Durum: ${device.onlineStatus === 'online' ? 'Çevrim İçi' : 'Çevrim Dışı'}` : 'TU8500 WSS'}
                         </span>
                       </div>
                     </div>
@@ -375,7 +375,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
           {activeTab === 'discover' && (
             <div className="space-y-3 py-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">LAN Scanner:</span>
+                <span className="text-xs font-semibold text-slate-300">Ağ Tarayıcısı:</span>
                 <span className="text-[10px] text-slate-400 font-mono">Port 8001 /api/v2/</span>
               </div>
 
@@ -384,16 +384,16 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                   type="text"
                   value={subnet}
                   onChange={(e) => setSubnet(e.target.value)}
-                  placeholder="Subnet (192.168.1)"
+                  placeholder="Alt Ağ (192.168.1)"
                   disabled={discoveryState === 'SCANNING'}
-                  className="flex-1 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-hidden focus:border-indigo-500"
                 />
                 {discoveryState === 'SCANNING' ? (
                   <button
                     onClick={() => tvDiscoveryEngine.cancelScan()}
                     className="px-3 py-2 bg-rose-600/30 text-rose-300 border border-rose-500/50 rounded-xl font-bold transition-colors cursor-pointer"
                   >
-                    Stop
+                    Durdur
                   </button>
                 ) : (
                   <button
@@ -401,7 +401,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                   >
                     <Search className="w-3.5 h-3.5" />
-                    <span>Scan</span>
+                    <span>Tara</span>
                   </button>
                 )}
               </div>
@@ -410,8 +410,8 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
               {discoveryState === 'SCANNING' && progress && (
                 <div className="p-3 bg-slate-800/50 border border-slate-800 rounded-2xl space-y-1.5 animate-fade-in">
                   <div className="flex justify-between text-[11px] text-indigo-300">
-                    <span>Scanning: {progress.currentIp}</span>
-                    <span>{progress.progressPercent}%</span>
+                    <span>Taranıyor: {progress.currentIp}</span>
+                    <span>%{progress.progressPercent}</span>
                   </div>
                   <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
                     <div
@@ -420,7 +420,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                     />
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    Found {progress.foundCount} Samsung TV(s)
+                    Şu ana kadar {progress.foundCount} Samsung TV bulundu
                   </p>
                 </div>
               )}
@@ -446,14 +446,14 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                       onClick={() => handleAddDiscovered(tv)}
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-xl transition-colors cursor-pointer"
                     >
-                      Connect
+                      Bağlan
                     </button>
                   </div>
                 ))}
 
                 {discoveryState === 'COMPLETED' && discoveredTvs.length === 0 && (
                   <div className="p-3 bg-slate-800/40 rounded-xl text-center text-slate-400 text-xs">
-                    No TVs detected in this range. Verify TV is turned ON.
+                    Bu IP aralığında TV tespit edilemedi. TV'nin açık ve aynı Wi-Fi'da olduğunu doğrulayın.
                   </div>
                 )}
               </div>
@@ -465,37 +465,37 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
             <div className="py-2 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Active TV IP Address
+                  Aktif TV IP Adresi
                 </label>
                 <input
                   id="input-mobile-tv-ip"
                   type="text"
                   value={ip}
                   onChange={(e) => onIpChange(e.target.value)}
-                  placeholder="e.g. 192.168.1.50"
-                  className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="ör. 192.168.1.103"
+                  className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-hidden focus:border-indigo-500 transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Port (Protocol)
+                    Port (Protokol)
                   </label>
                   <select
                     id="select-mobile-tv-port"
                     value={port}
                     onChange={(e) => onPortChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-hidden focus:border-indigo-500"
                   >
-                    <option value={8002}>8002 (WSS Secure)</option>
-                    <option value={8001}>8001 (WS Insecure)</option>
+                    <option value={8002}>8002 (WSS Güvenli)</option>
+                    <option value={8001}>8001 (WS Standart)</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Target Model
+                    Hedef Model
                   </label>
                   <div className="px-3 py-2 bg-slate-800/50 border border-slate-800 rounded-xl text-xs text-slate-300 font-mono truncate">
                     {activeTv?.modelName || 'TU8500'}
@@ -506,7 +506,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
               {/* Status and Token */}
               <div className="p-3 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Current Status:</span>
+                  <span className="text-slate-400">Mevcut Durum:</span>
                   <span
                     className={`font-semibold px-2 py-0.5 rounded-md text-[11px] ${
                       isConnected
@@ -516,18 +516,18 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                         : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                     }`}
                   >
-                    {connectionState}
+                    {connectionState === 'CONNECTED' ? 'BAĞLI' : connectionState === 'CONNECTING' ? 'BAĞLANIYOR' : connectionState === 'PAIRING' ? 'EŞLEŞİYOR' : connectionState === 'ERROR' ? 'HATA' : 'BAĞLI DEĞİL'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/80">
                   <span className="text-slate-400 flex items-center gap-1">
                     <Key className="w-3 h-3 text-indigo-400" />
-                    Auth Token:
+                    Yetki Jetonu:
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[11px] text-slate-300">
-                      {tokenMasked || 'None (Requires Pair)'}
+                      {tokenMasked || 'Yok (Eşleşme Gerekiyor)'}
                     </span>
                     {tokenMasked && (
                       <button
@@ -535,7 +535,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                         onClick={onClearToken}
                         className="text-[10px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
                       >
-                        Clear
+                        Temizle
                       </button>
                     )}
                   </div>
@@ -545,20 +545,20 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                 {port === 8002 && ip.trim() && (
                   <div className="pt-2 border-t border-slate-800/80">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400">TV SSL Certificate:</span>
+                      <span className="text-[11px] text-slate-400">TV SSL Sertifikası:</span>
                       <a
                         href={`https://${ip.trim()}:8002/api/v2/`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1"
                       >
-                        <span>Accept SSL (1-Click)</span>
+                        <span>SSL'i Kabul Et (1-Tık)</span>
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     </div>
                     {connectionState === 'ERROR' && (
                       <p className="text-[10px] text-rose-300 mt-1 bg-rose-950/40 p-2 rounded-lg border border-rose-900/50">
-                        Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. "Accept SSL" linkine tıklayıp "Gelişmiş" $\rightarrow$ "İlerle (güvensiz)" diyerek sertifikayı kabul edin, ardından tekrar bağlanın.
+                        Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. "SSL'i Kabul Et" linkine tıklayıp "Gelişmiş" $\rightarrow$ "İlerle (güvensiz)" diyerek sertifikayı kabul edin, ardından tekrar bağlanın.
                       </p>
                     )}
                   </div>
@@ -582,7 +582,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                     ) : (
                       <Wifi className="w-4 h-4" />
                     )}
-                    <span>{tokenMasked ? 'Connect to TV' : 'Pair with TV'}</span>
+                    <span>{tokenMasked ? 'TV\'ye Bağlan' : 'TV ile Eşleş'}</span>
                   </button>
                 ) : (
                   <button
@@ -590,7 +590,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                     onClick={onDisconnect}
                     className="flex-1 min-h-[44px] bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>Disconnect</span>
+                    <span>Bağlantıyı Kes</span>
                   </button>
                 )}
 
@@ -598,7 +598,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                   id="btn-mobile-probe"
                   onClick={handleProbe}
                   disabled={probing || !ip.trim()}
-                  title="Probe TV diagnostic endpoint /api/v2/"
+                  title="TV tanı uç noktası /api/v2/ sorgula"
                   className="px-4 min-h-[44px] bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {probing ? (
@@ -606,7 +606,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                   ) : (
                     <Info className="w-3.5 h-3.5" />
                   )}
-                  <span>Probe</span>
+                  <span>Sorgula</span>
                 </button>
               </div>
 
@@ -614,11 +614,11 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
                 <div className="p-3 bg-emerald-950/40 border border-emerald-800/50 rounded-xl text-xs text-emerald-300 space-y-1">
                   <div className="flex items-center gap-1 font-bold text-emerald-400">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>TV Responded:</span>
+                    <span>TV Yanıt Verdi:</span>
                   </div>
-                  <p>Name: {probeResult.name}</p>
+                  <p>Cihaz Adı: {probeResult.name}</p>
                   <p>Model: {probeResult.modelName || 'UE55TU8500'}</p>
-                  <p>Power State: {probeResult.powerState || 'ON'}</p>
+                  <p>Güç Durumu: {probeResult.powerState || 'AÇIK'}</p>
                 </div>
               )}
 
@@ -635,7 +635,7 @@ export const MobileSettingsDrawer: React.FC<MobileSettingsDrawerProps> = ({
         {/* Security Notice */}
         <div className="pt-3 border-t border-slate-800 flex items-center gap-2 text-[11px] text-slate-400">
           <Shield className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          <span>Strict Command Whitelist active. Serial numbers & raw credentials protected.</span>
+          <span>Sıkı Komut Beyaz Listesi etkin. Seri numarası ve kimlik bilgileri korunmaktadır.</span>
         </div>
 
       </div>

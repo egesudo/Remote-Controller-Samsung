@@ -23,8 +23,8 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
       const res = await onLaunchYouTubeProbe();
       setLaunchResult(
         res
-          ? 'Application launch request sent via IAppLauncher.'
-          : 'App launch dispatched. (Note: In browser preview, verify TV is on and on the same subnet).'
+          ? 'IAppLauncher aracılığıyla uygulama başlatma isteği gönderildi.'
+          : 'Uygulama başlatma komutu iletildi. (Not: Tarayıcı önizlemesinde TV açık ve aynı alt ağda olmalıdır).'
       );
     } finally {
       setLaunching(false);
@@ -33,31 +33,31 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
 
   const modules = [
     {
-      name: 'Samsung TV Core Controller',
-      phase: 'Phase 4 (Active)',
-      status: 'IMPLEMENTED',
-      details: 'WSS 8002, token auth, whitelist validation, auto-reconnect',
+      name: 'Samsung TV Çekirdek Denetleyicisi',
+      phase: 'Faz 4 (Aktif)',
+      status: 'UYGULANDI',
+      details: 'WSS 8002, jeton kimlik doğrulama, beyaz liste denetimi, otomatik yeniden bağlanma',
       color: 'emerald',
     },
     {
-      name: 'YouTube Control Module (IAppLauncher)',
-      phase: 'Phase 5 (Active)',
-      status: 'IMPLEMENTED',
-      details: `Target App ID: ${KNOWN_TV_APPS.YOUTUBE.id} (Tizen YouTube Application, Deep Link v=ID)`,
+      name: 'YouTube Kontrol Modülü (IAppLauncher)',
+      phase: 'Faz 5 (Aktif)',
+      status: 'UYGULANDI',
+      details: `Hedef Uygulama ID: ${KNOWN_TV_APPS.YOUTUBE.id} (Tizen YouTube Uygulaması, Derin Bağlantı v=ID)`,
       color: 'emerald',
     },
     {
-      name: 'Google / OAuth Account Service',
-      phase: 'Phase 5 (Active)',
-      status: 'READY',
-      details: 'Popup OAuth flow, server proxy for YouTube Data API v3, no token leak to browser',
+      name: 'Google / OAuth Hesap Servisi',
+      phase: 'Faz 5 (Aktif)',
+      status: 'HAZIR',
+      details: 'Açılır pencere OAuth akışı, YouTube Data API v3 için sunucu vekili, tarayıcıya jeton sızdırmaz',
       color: 'emerald',
     },
     {
-      name: 'AI & Voice Intent Pipeline',
-      phase: 'Future Phase',
-      status: 'DECOUPLED',
-      details: 'Speech-to-Text → Intent → Whitelist Validator → TV Controller',
+      name: 'Yapay Zeka & Ses Niyet Hattı',
+      phase: 'Gelecek Faz',
+      status: 'AYRIK',
+      details: 'Konuşmadan Metne → Niyet Ayrıştırma → Beyaz Liste Doğrulayıcı → TV Denetleyicisi',
       color: 'slate',
     },
   ];
@@ -68,10 +68,10 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
         <div>
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Layers className="w-5 h-5 text-indigo-600" />
-            Modular Controller Architecture
+            Modüler Denetleyici Mimarisi
           </h3>
           <p className="text-xs text-slate-500">
-            Strict separation of concerns. Secondary modules connect without restructuring core TV socket layer.
+            Sorumlulukların kesin ayrımı. İkincil modüller, temel TV soket katmanını yeniden yapılandırmadan bağlanır.
           </p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
       {/* YouTube Capability Actions */}
       <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="text-xs text-slate-600">
-          <span className="font-semibold text-slate-800">YouTube Capability:</span> Target App ID{' '}
+          <span className="font-semibold text-slate-800">YouTube Yeteneği:</span> Hedef Uygulama ID{' '}
           <code className="bg-slate-100 px-1 py-0.5 rounded text-red-700 font-mono">
             {KNOWN_TV_APPS.YOUTUBE.id}
           </code>
@@ -122,7 +122,7 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
               className="min-h-[36px] px-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Youtube className="w-3.5 h-3.5" />
-              <span>Open YouTube TV Hub</span>
+              <span>YouTube TV Merkezini Aç</span>
             </button>
           )}
           <button
@@ -132,7 +132,7 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
             className="min-h-[36px] px-3.5 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <Play className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Probe App Launch</span>
+            <span>Uygulama Başlatmayı Sına</span>
           </button>
         </div>
       </div>

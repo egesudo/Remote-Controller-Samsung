@@ -54,10 +54,10 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ logs, onClearLogs 
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-indigo-400" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-            Engine Event & Telemetry Stream
+            Motor Olayları ve Telemetri Akışı
           </h3>
           <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">
-            {logs.length} events
+            {logs.length} olay
           </span>
         </div>
 
@@ -70,7 +70,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ logs, onClearLogs 
                 filter === 'all' ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:text-white'
               }`}
             >
-              All
+              Tümü
             </button>
             <button
               onClick={() => setFilter('error')}
@@ -78,7 +78,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ logs, onClearLogs 
                 filter === 'error' ? 'bg-rose-600 text-white font-medium' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Warnings/Errors
+              Uyarı/Hata
             </button>
             <button
               onClick={() => setFilter('security')}
@@ -86,14 +86,14 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ logs, onClearLogs 
                 filter === 'security' ? 'bg-amber-600 text-white font-medium' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Security Blocks
+              Güvenlik Engelleri
             </button>
           </div>
 
           <button
             id="btn-clear-logs"
             onClick={onClearLogs}
-            title="Clear logs"
+            title="Günlükleri Temizle"
             className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ logs, onClearLogs 
       <div className="h-48 overflow-y-auto font-mono text-[11px] space-y-1 pr-2 scrollbar-thin scrollbar-thumb-slate-700">
         {filteredLogs.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-500 italic text-xs">
-            No events logged yet. Connect to TV or dispatch a command to view real-time frames.
+            Henüz kayıtlı bir olay yok. Canlı paket karelerini izlemek için TV'ye bağlanın veya bir komut iletin.
           </div>
         ) : (
           filteredLogs.map((log) => (

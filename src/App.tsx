@@ -298,7 +298,7 @@ export default function App() {
               }`}
             >
               <Smartphone className="w-4 h-4 text-indigo-600" />
-              <span>Mobile App Remote</span>
+              <span>Mobil Kumanda</span>
             </button>
 
             <button
@@ -311,7 +311,7 @@ export default function App() {
               }`}
             >
               <Search className="w-4 h-4 text-indigo-600" />
-              <span>TV Discovery & Devices ({allTvs.length})</span>
+              <span>TV Keşfi & Cihazlar ({allTvs.length})</span>
             </button>
 
             <button
@@ -324,7 +324,7 @@ export default function App() {
               }`}
             >
               <Sliders className="w-4 h-4 text-indigo-600" />
-              <span>Studio & Telemetry</span>
+              <span>Stüdyo & Tanılama</span>
             </button>
           </div>
 
@@ -340,7 +340,17 @@ export default function App() {
                     : 'bg-rose-500'
                 }`}
               />
-              <span>{connectionState}</span>
+              <span>
+                {connectionState === 'CONNECTED'
+                  ? 'BAĞLI'
+                  : connectionState === 'CONNECTING'
+                  ? 'BAĞLANIYOR'
+                  : connectionState === 'PAIRING'
+                  ? 'EŞLEŞİYOR'
+                  : connectionState === 'ERROR'
+                  ? 'HATA'
+                  : 'BAĞLI DEĞİL'}
+              </span>
             </div>
 
             <button
@@ -349,7 +359,7 @@ export default function App() {
               className="px-3 py-1.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
               <Youtube className="w-3.5 h-3.5" />
-              <span>YouTube Hub</span>
+              <span>YouTube Merkezi</span>
             </button>
 
             <button
@@ -358,7 +368,7 @@ export default function App() {
               className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
               <Mic className="w-3.5 h-3.5" />
-              <span>Voice AI</span>
+              <span>Sesli AI</span>
             </button>
 
             <button
@@ -414,13 +424,13 @@ export default function App() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <Tv className="w-4 h-4 text-indigo-600" />
-                      Active Controlled TV
+                      Aktif Kumanda Edilen TV
                     </span>
                     <button
                       onClick={() => setActiveTab('devices')}
                       className="text-[11px] text-indigo-600 hover:underline font-semibold"
                     >
-                      Manage All TVs →
+                      Tüm TV'leri Yönet →
                     </button>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -438,7 +448,15 @@ export default function App() {
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-slate-200 text-slate-700'
                       }`}>
-                        {connectionState}
+                        {connectionState === 'CONNECTED'
+                          ? 'BAĞLI'
+                          : connectionState === 'CONNECTING'
+                          ? 'BAĞLANIYOR'
+                          : connectionState === 'PAIRING'
+                          ? 'EŞLEŞİYOR'
+                          : connectionState === 'ERROR'
+                          ? 'HATA'
+                          : 'BAĞLI DEĞİL'}
                       </span>
                     </div>
                   </div>
@@ -452,28 +470,28 @@ export default function App() {
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-slate-900">
-                        React Native / Expo Mobile Project Ready
+                        React Native / Expo Mobil Projesi Hazır
                       </h3>
                       <p className="text-[11px] text-slate-500">
-                        The full native code is organized under <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">/mobile</code>.
+                        Tam yerel mobil kod tabanı <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">/mobile</code> dizininde mevcuttur.
                       </p>
                     </div>
                   </div>
 
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 space-y-1.5 font-mono">
-                    <p className="font-bold text-indigo-950">To run on your physical Android / iOS device:</p>
+                    <p className="font-bold text-indigo-950">Fiziksel Android / iOS cihazınızda çalıştırmak için:</p>
                     <p className="text-slate-600">$ cd mobile</p>
                     <p className="text-slate-600">$ npm install</p>
                     <p className="text-slate-600">$ npx expo start</p>
                     <p className="text-slate-500 text-[10px] pt-1">
-                      Scan the terminal QR code in Expo Go while connected to the same Wi-Fi as your Samsung TV!
+                      Samsung TV'niz ile aynı Wi-Fi ağına bağlıyken Expo Go uygulamasında terminaldeki QR kodu okutun!
                     </p>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2">
                     <span className="flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      Strict Whitelist Validator Active
+                      Sıkı Beyaz Liste Doğrulayıcı Etkin
                     </span>
                     <span className="font-mono text-slate-400">Port 8002 WSS</span>
                   </div>

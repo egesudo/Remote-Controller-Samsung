@@ -20,6 +20,29 @@ export interface SamsungWebSocketEvents {
   onLog: (level: 'info' | 'warn' | 'error' | 'success', message: string, data?: unknown) => void;
 }
 
+/**
+ * Client-side probe to test if TV's SSL certificate on port 8002 is trusted in the browser
+ */
+export async function checkTvSslCertificate(host: string, port = 8002, timeoutMs = 2500): Promise<boolean> {
+  const cleanHost = (host || '').trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+  if (!cleanHost) return false;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    // mode: 'no-cors' allows pinging the TV over HTTPS.
+    // If the TV is reachable and certificate is accepted, it succeeds (returns opaque response).
+    // If the certificate is rejected or host unreachable, it throws a TypeError.
+    await fetch(`https://${cleanHost}:${port}/api/v2/`, {
+      mode: 'no-cors',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export class SamsungWebSocket {
   private ws: WebSocket | null = null;
   private state: ConnectionState = 'DISCONNECTED';
@@ -27,6 +50,7 @@ export class SamsungWebSocket {
   private heartbeatTimer: number | null = null;
   private reconnectAttempts = 0;
   private isManuallyClosed = false;
+  private hasSuccessfullyConnected = false;
   private currentHost = '';
   private currentPort = 8002;
   private currentAppName = 'SamsungRemoteApp';
@@ -75,6 +99,9 @@ export class SamsungWebSocket {
       this.clearReconnectTimer();
       this.stopHeartbeat();
       this.isManuallyClosed = false;
+      if (this.reconnectAttempts === 0) {
+        this.hasSuccessfullyConnected = false;
+      }
 
       const rawHost = params.host.trim();
       // Sanitize host IP (strip protocols, paths, and ports)
@@ -87,7 +114,7 @@ export class SamsungWebSocket {
 
       if (!this.currentHost) {
         this.setState('ERROR');
-        this.events.onError?.('TV IP address / host cannot be empty.');
+        this.events.onError?.('TV IP adresi / ana bilgisayar boş bırakılamaz.');
         resolve(false);
         return;
       }
@@ -114,7 +141,7 @@ export class SamsungWebSocket {
       this.setState(this.currentToken ? 'CONNECTING' : 'PAIRING');
       this.events.onLog?.(
         'info',
-        `Initiating socket connection to ${protocol}${this.currentHost}:${this.currentPort} (Token: ${this.currentToken ? 'Provided' : 'None - Pairing Required'})`
+        `TV WebSocket soket bağlantısı başlatılıyor: ${protocol}${this.currentHost}:${this.currentPort} (Jeton: ${this.currentToken ? 'Mevcut' : 'Yok - Eşleştirme Gerekli'})`
       );
 
       try {
@@ -122,7 +149,7 @@ export class SamsungWebSocket {
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         this.setState('ERROR');
-        this.events.onError?.(`Failed to construct WebSocket: ${errorMsg}`);
+        this.events.onError?.(`WebSocket oluşturulamadı: ${errorMsg}`);
         resolve(false);
         return;
       }
@@ -131,8 +158,9 @@ export class SamsungWebSocket {
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
+        this.hasSuccessfullyConnected = true;
         this.startHeartbeat();
-        this.events.onLog?.('info', 'WebSocket transport opened with TV endpoint.');
+        this.events.onLog?.('info', 'WebSocket kanalı TV uç noktası ile başarıyla açıldı.');
         
         // If we connected with token, we are active. If not, TV displays permission prompt.
         if (this.currentToken) {
@@ -145,7 +173,7 @@ export class SamsungWebSocket {
           this.setState('PAIRING');
           this.events.onLog?.(
             'warn',
-            'No token provided: Check TV screen now and click "Allow" on the prompt.'
+            'Jeton henüz onaylanmadı: TV ekranındaki "İzin Ver" (Allow) uyarısını kumandanızla onaylayın.'
           );
         }
       };
@@ -160,19 +188,24 @@ export class SamsungWebSocket {
             resolve(true);
           }
         } catch (err) {
-          this.events.onLog?.('warn', 'Received non-JSON message frame from TV', messageEvent.data);
+          this.events.onLog?.('warn', 'TV uç noktasından JSON olmayan mesaj alındı', messageEvent.data);
         }
       };
 
       this.ws.onerror = () => {
         this.stopHeartbeat();
-        this.events.onLog?.(
-          'error',
-          `WebSocket connection error. If using port 8002 in browser, ensure TV self-signed certificate is accepted or TV is on and reachable at ${this.currentHost}.`
-        );
-        this.events.onError?.(
-          `Unable to connect to Samsung TV at ${this.currentHost}:${this.currentPort}. Verify LAN IP, TV power state, and WSS SSL acceptance.`
-        );
+        const isPort8002 = this.currentPort === 8002;
+        const certUrl = `https://${this.currentHost}:8002/api/v2/`;
+        const logMsg = isPort8002
+          ? `WebSocket bağlantı hatası. Port 8002 (WSS) için TV'nin kendinden imzalı SSL sertifikasını tarayıcınızda onaylayın (${certUrl}) veya TV'nin açık ve ${this.currentHost} adresinde yerel ağda erişilebilir olduğunu kontrol edin.`
+          : `WebSocket bağlantı hatası. TV'nin açık ve ${this.currentHost}:${this.currentPort} adresinde yerel ağda erişilebilir olduğundan emin olun.`;
+
+        const userErrMsg = isPort8002
+          ? `Samsung TV'ye (${this.currentHost}:${this.currentPort}) bağlanılamadı. Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. Lütfen SSL onay linkine tıklayın ve TV'nin açık olduğundan emin olun.`
+          : `Samsung TV'ye (${this.currentHost}:${this.currentPort}) bağlanılamadı. TV'nin açık ve aynı yerel ağda (Wi-Fi) olduğunu doğrulayın.`;
+
+        this.events.onLog?.('error', logMsg);
+        this.events.onError?.(userErrMsg);
         this.setState('ERROR');
         if (!connectionResolved) {
           connectionResolved = true;
@@ -184,14 +217,24 @@ export class SamsungWebSocket {
         this.stopHeartbeat();
         this.events.onLog?.(
           'info',
-          `WebSocket closed with code ${closeEvent.code}: ${closeEvent.reason || 'Normal/Clean close'}`
+          `WebSocket kapandı (kod ${closeEvent.code}): ${closeEvent.reason || 'Bağlantı kesildi / temiz kapanış'}`
         );
         this.ws = null;
 
-        if (!this.isManuallyClosed && this.autoReconnect && this.state !== 'PAIRING' && this.reconnectAttempts < this.maxReconnectAttempts) {
+        // Only auto-reconnect if the socket was PREVIOUSLY connected and open, NOT on initial handshake failure
+        if (
+          !this.isManuallyClosed &&
+          this.autoReconnect &&
+          this.hasSuccessfullyConnected &&
+          this.state !== 'PAIRING' &&
+          this.reconnectAttempts < this.maxReconnectAttempts
+        ) {
           this.scheduleReconnect();
         } else {
-          this.setState('DISCONNECTED');
+          this.clearReconnectTimer();
+          if (this.state !== 'ERROR') {
+            this.setState('DISCONNECTED');
+          }
         }
 
         if (!connectionResolved) {
@@ -327,6 +370,7 @@ export class SamsungWebSocket {
    */
   public disconnect() {
     this.isManuallyClosed = true;
+    this.hasSuccessfullyConnected = false;
     this.clearReconnectTimer();
     this.stopHeartbeat();
     this.reconnectAttempts = 0;

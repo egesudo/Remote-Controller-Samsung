@@ -50,16 +50,16 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
   const [auditReport, setAuditReport] = useState<HardwareAuditReport | null>(null);
 
   const testList: TestItem[] = [
-    { id: 'volup', name: 'Volume Up', key: 'KEY_VOLUP', targetBehavior: 'TV OSD volume bar increases by 1 step' },
-    { id: 'voldown', name: 'Volume Down', key: 'KEY_VOLDOWN', targetBehavior: 'TV OSD volume bar decreases by 1 step' },
-    { id: 'mute', name: 'Mute Toggle', key: 'KEY_MUTE', targetBehavior: 'TV audio mutes or unmutes with mute icon' },
-    { id: 'nav_up', name: 'D-Pad Up', key: 'KEY_UP', targetBehavior: 'Active focus ring moves upward on TV menu' },
-    { id: 'nav_down', name: 'D-Pad Down', key: 'KEY_DOWN', targetBehavior: 'Active focus ring moves downward on TV menu' },
-    { id: 'nav_enter', name: 'D-Pad OK / Enter', key: 'KEY_ENTER', targetBehavior: 'Opens selected menu item on TV' },
-    { id: 'home', name: 'Smart Hub / Home', key: 'KEY_HOME', targetBehavior: 'Brings up Samsung One UI ribbon/dashboard' },
-    { id: 'back', name: 'Return / Back', key: 'KEY_RETURN', targetBehavior: 'Exits current submenu or cancels action' },
-    { id: 'chup', name: 'Channel Up', key: 'KEY_CHUP', targetBehavior: 'Switches to next channel (if in TV mode)' },
-    { id: 'chdown', name: 'Channel Down', key: 'KEY_CHDOWN', targetBehavior: 'Switches to previous channel' },
+    { id: 'volup', name: 'Sesi Arttır', key: 'KEY_VOLUP', targetBehavior: 'TV ekranındaki ses çubuğu 1 kademe artar' },
+    { id: 'voldown', name: 'Sesi Azalt', key: 'KEY_VOLDOWN', targetBehavior: 'TV ekranındaki ses çubuğu 1 kademe azalır' },
+    { id: 'mute', name: 'Sesi Kapat/Aç', key: 'KEY_MUTE', targetBehavior: 'TV sesi kapanır veya açılır, sessiz simgesi görünür' },
+    { id: 'nav_up', name: 'Yukarı Yön', key: 'KEY_UP', targetBehavior: 'Menüdeki odak halkası yukarı hareket eder' },
+    { id: 'nav_down', name: 'Aşağı Yön', key: 'KEY_DOWN', targetBehavior: 'Menüdeki odak halkası aşağı hareket eder' },
+    { id: 'nav_enter', name: 'Tamam / Seç', key: 'KEY_ENTER', targetBehavior: 'TV ekranında seçili menü öğesini açar' },
+    { id: 'home', name: 'Smart Hub / Ana Menü', key: 'KEY_HOME', targetBehavior: 'Samsung One UI alt menü şeridini açar' },
+    { id: 'back', name: 'Geri / Çıkış', key: 'KEY_RETURN', targetBehavior: 'Mevcut alt menüden çıkar veya işlemi iptal eder' },
+    { id: 'chup', name: 'Kanal Arttır', key: 'KEY_CHUP', targetBehavior: 'Sonraki kanala geçer (TV modundaysa)' },
+    { id: 'chdown', name: 'Kanal Azalt', key: 'KEY_CHDOWN', targetBehavior: 'Önceki kanala geçer' },
   ];
 
   const handleTestKey = async (item: TestItem) => {
@@ -105,14 +105,14 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-bold text-slate-900">
-                Real-Device Function Verification Checklist & Hardware Audit
+                Gerçek Cihaz Fonksiyon Doğrulama Listesi & Donanım Denetimi
               </h4>
               <span className="text-[10px] font-semibold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-mono">
-                {totalTested}/{testList.length} Keys Tested
+                {totalTested}/{testList.length} Tuş Test Edildi
               </span>
             </div>
             <p className="text-[11px] text-slate-500">
-              Verify basic remote controls directly against your physical Samsung TU8500 screen and audit LAN ports.
+              Temel kumanda kontrollerini fiziksel Samsung TU8500 ekranınızda test edin ve yerel ağ portlarını denetleyin.
             </p>
           </div>
         </div>
@@ -130,10 +130,10 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
               <div>
                 <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                   <Activity className="w-4 h-4 text-indigo-600" />
-                  Target Device Port & Protocol Audit ({ip})
+                  Hedef Cihaz Port & Protokol Denetimi ({ip})
                 </span>
                 <p className="text-[11px] text-slate-500">
-                  Tests port 8001 REST diagnostics and port 8002 WSS TCP availability with latency profiling.
+                  Port 8001 REST tanı ve port 8002 WSS TCP erişilebilirliğini gecikme süresiyle test eder.
                 </p>
               </div>
 
@@ -144,7 +144,7 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-slate-300 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isAuditing ? 'animate-spin' : ''}`} />
-                <span>{isAuditing ? 'Testing Ports...' : 'Audit Target Ports'}</span>
+                <span>{isAuditing ? 'Portlar Taranıyor...' : 'Portları Denetle'}</span>
               </button>
             </div>
 
@@ -154,24 +154,24 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
                   <div className={`p-2.5 rounded-lg border ${auditReport.restPort8001.reachable ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
                     <div className="font-semibold text-[11px]">Port 8001 (REST /api/v2/)</div>
                     <div className="text-[10px] mt-0.5">
-                      {auditReport.restPort8001.reachable ? `Reachable (${auditReport.restPort8001.latencyMs}ms)` : 'Unreachable / Closed'}
+                      {auditReport.restPort8001.reachable ? `Erişilebilir (${auditReport.restPort8001.latencyMs}ms)` : 'Erişilemez / Kapalı'}
                     </div>
                   </div>
 
                   <div className={`p-2.5 rounded-lg border ${auditReport.wssPort8002.reachable ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
-                    <div className="font-semibold text-[11px]">Port 8002 (WSS Remote Socket)</div>
+                    <div className="font-semibold text-[11px]">Port 8002 (WSS Kumanda Soketi)</div>
                     <div className="text-[10px] mt-0.5">
-                      {auditReport.wssPort8002.reachable ? `Open (${auditReport.wssPort8002.latencyMs}ms)` : 'Closed / Filtered'}
+                      {auditReport.wssPort8002.reachable ? `Açık (${auditReport.wssPort8002.latencyMs}ms)` : 'Kapalı / Filtreli'}
                     </div>
                   </div>
 
                   <div className="p-2.5 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-900">
                     <div className="font-semibold text-[11px] flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      Privacy & Serial Purge
+                      Gizlilik & Seri No Koruması
                     </div>
                     <div className="text-[10px] mt-0.5">
-                      Compliant (0 hardware serials leaked)
+                      Uyumlu (0 donanım seri no sızıntısı)
                     </div>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
 
           <div>
             <p className="text-xs text-slate-600 mb-2">
-              Click any button below to dispatch the exact whitelisted key frame to the TV and observe its on-screen behavior:
+              Aşağıdaki butonlara basarak TV'ye izin verilmiş tuş paketini gönderin ve TV ekranındaki tepkisini gözlemleyin:
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -227,7 +227,7 @@ export const RealTvTestGuide: React.FC<RealTvTestGuideProps> = ({
                       disabled={!isConnected}
                       className="shrink-0 px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 transition-colors cursor-pointer disabled:opacity-40"
                     >
-                      Test
+                      Dene
                     </button>
                   </div>
                 );

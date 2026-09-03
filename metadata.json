@@ -1,0 +1,6 @@
+{
+  "name": "Remote Controller for Home TV (Samsung)",
+  "description": "Secure, modular remote control, TV discovery, YouTube integration, and AI-powered voice commands with strict whitelist validation for Samsung Smart TVs (TU8500).",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Remote Controller for Home TV (Samsung)",
+    "slug": "samsung-tv-remote-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.samsungremote.app",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app requires access to your local network to discover and send control commands to your Samsung Smart TV."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#020617"
+      },
+      "package": "com.samsungremote.app",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.VIBRATE"
+      ]
+    }
+  }
+}

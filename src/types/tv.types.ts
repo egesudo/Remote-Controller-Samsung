@@ -139,6 +139,39 @@ export interface ICommandValidator {
 }
 
 /**
+ * Discovered Smart TV Application Metadata
+ */
+export interface DiscoveredAppInfo {
+  appId: string;
+  name: string;
+  appType?: number | string;
+  icon?: string;
+  version?: string;
+  isRunning?: boolean;
+  source: 'websocket_eden' | 'rest_api' | 'registry_verified';
+}
+
+/**
+ * Telemetry record detailing outbound payload and inbound TV response/error
+ */
+export interface AppLaunchTelemetryRecord {
+  id: string;
+  timestamp: string;
+  appId: string;
+  appName: string;
+  actionType: 'NATIVE_LAUNCH' | 'DEEP_LINK';
+  actionUrl?: string;
+  targetHost: string;
+  outboundEdenJson: string;
+  outboundAppStartJson?: string;
+  responseStatus: 'PENDING' | 'SUCCESS_200' | 'ERROR_404' | 'PERMISSION_DENIED_AUTH' | 'ERROR_PAYLOAD' | 'ERROR_TV' | 'TIMEOUT_SILENT';
+  responseEvent?: string;
+  rawResponseJson?: string;
+  statusCode?: number | null;
+  diagnosis: string;
+}
+
+/**
  * Modular Application Launcher Capability
  * Decouples app launching (such as YouTube) from the raw remote key channel
  */
@@ -147,6 +180,15 @@ export interface IAppLauncher {
   launchApp(appId: string, actionUrl?: string): Promise<boolean>;
   launchYouTube?(videoIdOrPayload?: string): Promise<boolean>;
   getAppStatus(appId: string): Promise<Record<string, unknown> | null>;
+  // Runtime discovery methods
+  discoverInstalledApps?(options?: { forceRefresh?: boolean; timeoutMs?: number }): Promise<DiscoveredAppInfo[]>;
+  getInstalledApps?(): DiscoveredAppInfo[];
+  resolveYouTubeAppId?(forceRefresh?: boolean): Promise<string>;
+  getResolvedYouTubeAppId?(): string | null;
+  // Granular Event Logging & Telemetry
+  getLastLaunchTelemetry?(): AppLaunchTelemetryRecord | null;
+  getLaunchTelemetryHistory?(): AppLaunchTelemetryRecord[];
+  addTelemetryListener?(listener: (record: AppLaunchTelemetryRecord) => void): () => void;
 }
 
 /**

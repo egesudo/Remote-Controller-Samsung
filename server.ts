@@ -433,6 +433,40 @@ async function startServer() {
     }
   });
 
+  // --- 6b. LAN TV Application Discovery & Status Proxy ---
+  app.get('/api/tv/applications', async (req, res) => {
+    const ip = req.query.ip as string;
+    const appId = req.query.appId as string;
+    if (!ip) {
+      return res.status(400).json({ success: false, error: 'ip is required' });
+    }
+    const cleanIp = String(ip).trim();
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
+
+      const url = appId
+        ? `http://${cleanIp}:8001/api/v2/applications/${encodeURIComponent(appId)}`
+        : `http://${cleanIp}:8001/api/v2/applications/`;
+
+      const tvRes = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!tvRes.ok) {
+        return res.status(tvRes.status).json({ success: false, status: tvRes.status });
+      }
+
+      const data = await tvRes.json();
+      return res.json({ success: true, data });
+    } catch (err) {
+      return res.json({ success: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
   // Helper to sanitize TV metadata and purge any serial numbers or sensitive hardware IDs
   const sanitizeTvDevicePayload = (obj: any): any => {
     if (!obj || typeof obj !== 'object') return obj;

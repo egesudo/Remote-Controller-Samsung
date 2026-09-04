@@ -15,6 +15,7 @@ export interface SamsungWebSocketEvents {
   onStateChange: (state: ConnectionState) => void;
   onTokenReceived: (token: string) => void;
   onTokenInvalidated?: () => void;
+  onInstalledAppsReceived?: (apps: unknown[]) => void;
   onMessage: (event: string, data: unknown) => void;
   onError: (error: string) => void;
   onLog: (level: 'info' | 'warn' | 'error' | 'success', message: string, data?: unknown) => void;
@@ -420,6 +421,29 @@ export class SamsungWebSocket {
         break;
       }
 
+      case 'ed.installedApp.get':
+      case 'ed.apps.list': {
+        let appList: unknown[] = [];
+        const rawData = msg.data !== undefined ? msg.data : data;
+        if (Array.isArray(rawData)) {
+          appList = rawData;
+        } else if (rawData && typeof rawData === 'object') {
+          const casted = rawData as Record<string, unknown>;
+          if (Array.isArray(casted.data)) {
+            appList = casted.data;
+          } else if (Array.isArray(casted.apps)) {
+            appList = casted.apps;
+          }
+        }
+        this.events.onLog?.(
+          'info',
+          `[WebSocket:APPS] TV returned ${appList.length} applications from ${event}`,
+          appList
+        );
+        this.events.onInstalledAppsReceived?.(appList);
+        break;
+      }
+
       case 'ms.channel.emit': {
         const innerEvent = typeof (data as Record<string, unknown>).event === 'string' ? (data as Record<string, unknown>).event : '';
         if (innerEvent === 'ed.apps.launch') {
@@ -428,6 +452,22 @@ export class SamsungWebSocket {
             `[WebSocket:AppLaunch:DEBUG] TV relayed ms.channel.emit with inner event ed.apps.launch: ${JSON.stringify(msg)}`,
             msg
           );
+        } else if (innerEvent === 'ed.installedApp.get' || innerEvent === 'ed.apps.list') {
+          const innerData = (data as Record<string, unknown>).data;
+          let appList: unknown[] = [];
+          if (Array.isArray(innerData)) {
+            appList = innerData;
+          } else if (innerData && typeof innerData === 'object') {
+            const casted = innerData as Record<string, unknown>;
+            if (Array.isArray(casted.data)) appList = casted.data;
+            else if (Array.isArray(casted.apps)) appList = casted.apps;
+          }
+          this.events.onLog?.(
+            'info',
+            `[WebSocket:APPS] TV relayed ${appList.length} applications from inner ${innerEvent}`,
+            appList
+          );
+          this.events.onInstalledAppsReceived?.(appList);
         } else {
           this.events.onLog?.('info', `TV channel emit event: ${innerEvent || 'unnamed'}`, data);
         }
@@ -596,6 +636,33 @@ export class SamsungWebSocket {
         }
       }
     }, 25000);
+  }
+
+  /**
+   * Queries the Samsung Smart TV for installed Smart Hub applications via EDEN Event Bus
+   */
+  public requestInstalledApps(): boolean {
+    if (!this.isOpen() || this.state !== 'CONNECTED') {
+      return false;
+    }
+    this.events.onLog?.('info', '[WebSocket:APPS] Dispatching installed app query to TV via ed.installedApp.get...');
+    this.sendRawPacket({
+      method: 'ms.channel.emit',
+      params: {
+        event: 'ed.installedApp.get',
+        to: 'host',
+        data: {},
+      },
+    });
+    this.sendRawPacket({
+      method: 'ms.channel.emit',
+      params: {
+        event: 'ed.apps.list',
+        to: 'host',
+        data: {},
+      },
+    });
+    return true;
   }
 
   private stopHeartbeat() {

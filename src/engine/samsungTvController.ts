@@ -47,8 +47,15 @@ export class SamsungTVController implements ITVController {
       onStateChange: (state) => this.handleStateChange(state),
       onTokenReceived: (token) => this.handleTokenReceived(token),
       onTokenInvalidated: () => this.handleTokenInvalidated(),
-      onMessage: (event, data) => this.log('info', `Socket event: ${event}`, data),
-      onError: (err) => this.handleError(err),
+      onInstalledAppsReceived: (apps) => (this.appLauncher as ModularAppLauncher).receiveInstalledApps(apps),
+      onMessage: (event, data) => {
+        this.log('info', `Socket event: ${event}`, data);
+        (this.appLauncher as ModularAppLauncher).handleWebSocketResponse?.(event, data);
+      },
+      onError: (err) => {
+        this.handleError(err);
+        (this.appLauncher as ModularAppLauncher).handleWebSocketError?.(err);
+      },
       onLog: (level, msg, data) => this.log(level, msg, data),
     });
 
@@ -58,7 +65,8 @@ export class SamsungTVController implements ITVController {
       (packet) => this.socket.sendRawPacket(packet),
       () => this.socket.isOpen() && this.socket.getState() === 'CONNECTED',
       (level, msg, data) => this.log(level, msg, data),
-      (appId, appName) => this.socket.trackPendingAppLaunch(appId, appName)
+      (appId, appName) => this.socket.trackPendingAppLaunch(appId, appName),
+      () => this.socket.requestInstalledApps()
     );
   }
 
@@ -284,6 +292,10 @@ export class SamsungTVController implements ITVController {
 
   private handleStateChange(state: ConnectionState) {
     this.listeners.forEach((l) => l.onStateChange?.(state));
+    if (state === 'CONNECTED') {
+      // Upon successful authentication, initiate runtime discovery of installed TV applications
+      this.appLauncher.discoverInstalledApps?.({ forceRefresh: true }).catch(() => {});
+    }
   }
 
   private handleTokenInvalidated() {

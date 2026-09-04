@@ -3,28 +3,37 @@ import {
   AlertTriangle,
   Cast,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   FastForward,
   HelpCircle,
+  Info,
   ListVideo,
   LogOut,
   Play,
   PlaySquare,
+  RefreshCw,
   Rewind,
   Search,
   Sparkles,
+  Terminal,
   Tv,
   Volume2,
   VolumeX,
   X,
   Youtube,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   CURATED_YOUTUBE_STREAMS,
   tvController,
   tvDeviceManager,
   youTubeService,
+  type AppLaunchTelemetryRecord,
   type ConnectionState,
+  type DiscoveredAppInfo,
   type YouTubeAuthStatus,
   type YouTubePlaylist,
   type YouTubeVideo,
@@ -48,7 +57,11 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
 
   // Deep Link State
   const [videoInput, setVideoInput] = useState('');
-  const [launchMessage, setLaunchMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [launchMessage, setLaunchMessage] = useState<{
+    type: 'success' | 'error' | 'info';
+    text: string;
+    showTroubleshoot?: boolean;
+  } | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
 
   // Google OAuth & YouTube Data State
@@ -64,7 +77,24 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
   const [searchResults, setSearchResults] = useState<YouTubeVideo[]>(CURATED_YOUTUBE_STREAMS);
   const [showConfigGuide, setShowConfigGuide] = useState(false);
 
-  // Sync active TV info
+  // Runtime App Discovery State
+  const [resolvedYtId, setResolvedYtId] = useState<string>(
+    tvController.appLauncher.getResolvedYouTubeAppId?.() || '111299001912'
+  );
+  const [isScanningApps, setIsScanningApps] = useState(false);
+  const [discoveredCount, setDiscoveredCount] = useState(
+    tvController.appLauncher.getInstalledApps?.().length || 0
+  );
+  const [discoveredAppsList, setDiscoveredAppsList] = useState<DiscoveredAppInfo[]>(
+    tvController.appLauncher.getInstalledApps?.() || []
+  );
+  const [showDiscoveryDetails, setShowDiscoveryDetails] = useState(false);
+  const [lastTelemetry, setLastTelemetry] = useState<AppLaunchTelemetryRecord | null>(
+    tvController.appLauncher.getLastLaunchTelemetry?.() || null
+  );
+  const [copiedPayload, setCopiedPayload] = useState(false);
+
+  // Sync active TV info and telemetry
   useEffect(() => {
     const updateTvInfo = () => {
       const activeTv = tvDeviceManager.getActiveDevice();
@@ -75,6 +105,13 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
       const state = tvController.getConnectionState();
       setConnState(state);
       setIsTvConnected(state === 'CONNECTED');
+      const ytId = tvController.appLauncher.getResolvedYouTubeAppId?.();
+      if (ytId) setResolvedYtId(ytId);
+      const apps = tvController.appLauncher.getInstalledApps?.() || [];
+      setDiscoveredAppsList(apps);
+      setDiscoveredCount(apps.length);
+      const latestTelemetry = tvController.appLauncher.getLastLaunchTelemetry?.();
+      if (latestTelemetry) setLastTelemetry(latestTelemetry);
     };
 
     updateTvInfo();
@@ -82,10 +119,14 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
       onStateChange: () => updateTvInfo(),
     });
     const unsubManager = tvDeviceManager.subscribe(() => updateTvInfo());
+    const unsubTelemetry = tvController.appLauncher.addTelemetryListener?.((record) => {
+      setLastTelemetry({ ...record });
+    });
 
     return () => {
       unsubController();
       unsubManager();
+      unsubTelemetry?.();
     };
   }, []);
 
@@ -133,6 +174,43 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Manual trigger for runtime app discovery to troubleshoot launch issues
+  const handleRefreshAppDiscovery = async () => {
+    setIsScanningApps(true);
+    setLaunchMessage({
+      type: 'info',
+      text: 'Samsung TV aktif ve yüklü uygulamaları taranıyor (WebSocket EDEN & REST)...',
+    });
+    try {
+      const apps = await tvController.appLauncher.discoverInstalledApps?.({
+        forceRefresh: true,
+        timeoutMs: 3500,
+      });
+      const count = apps?.length || 0;
+      setDiscoveredCount(count);
+      const ytId = await tvController.appLauncher.resolveYouTubeAppId?.(true);
+      if (ytId) {
+        setResolvedYtId(ytId);
+      }
+      const updatedList = tvController.appLauncher.getInstalledApps?.() || [];
+      setDiscoveredAppsList(updatedList);
+
+      setLaunchMessage({
+        type: 'success',
+        text: `Refresh App Discovery tamamlandı! ${count} uygulama algılandı. Doğrulanan YouTube App ID: ${ytId || '111299001912'}`,
+      });
+    } catch (err) {
+      setLaunchMessage({
+        type: 'error',
+        text: `Uygulama taraması sırasında hata oluştu: ${err instanceof Error ? err.message : String(err)}. Lütfen TV bağlantısını kontrol edin.`,
+        showTroubleshoot: true,
+      });
+    } finally {
+      setIsScanningApps(false);
+    }
+  };
+  const handleScanApps = handleRefreshAppDiscovery;
+
   // Launch YouTube app on TV
   const handleLaunchYouTubeApp = async (videoId?: string) => {
     // Pre-flight check: TV must be connected via Port 8002 WSS
@@ -169,6 +247,9 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
         ? await tvController.appLauncher.launchYouTube(payload)
         : await tvController.appLauncher.launchApp('111299001912', payload);
 
+      const ytId = tvController.appLauncher.getResolvedYouTubeAppId?.();
+      if (ytId) setResolvedYtId(ytId);
+
       if (success) {
         setLaunchMessage({
           type: 'success',
@@ -179,13 +260,15 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
       } else {
         setLaunchMessage({
           type: 'info',
-          text: `YouTube başlatma komutu iletildi. Uygulama açılmazsa TV'nin açık ve aynı ağda olduğunu kontrol edin.`,
+          text: `YouTube başlatma komutu iletildi. Uygulama açılmazsa TV'nin açık olduğunu kontrol edin veya "Refresh App Discovery" ile uygulama kimliğini yenileyin.`,
+          showTroubleshoot: true,
         });
       }
     } catch {
       setLaunchMessage({
         type: 'error',
-        text: 'Uygulama başlatılamadı. Lütfen yerel ağ bağlantısını kontrol edin.',
+        text: 'Uygulama başlatılamadı. TV yerel ağ bağlantısını kontrol edin veya "Refresh App Discovery" ile kimliği yenileyin.',
+        showTroubleshoot: true,
       });
     } finally {
       setIsLaunching(false);
@@ -300,7 +383,7 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
         {/* Status Toast / Launch Feedback */}
         {launchMessage && (
           <div
-            className={`px-4 py-2.5 text-xs flex items-center justify-between ${
+            className={`px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-2 ${
               launchMessage.type === 'success'
                 ? 'bg-emerald-950/80 text-emerald-300 border-b border-emerald-800/40'
                 : launchMessage.type === 'error'
@@ -314,12 +397,26 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
               {launchMessage.type === 'info' && <Cast className="w-4 h-4 shrink-0 text-indigo-400" />}
               <span className="truncate">{launchMessage.text}</span>
             </div>
-            <button
-              onClick={() => setLaunchMessage(null)}
-              className="text-slate-400 hover:text-slate-200 ml-2 text-xs cursor-pointer"
-            >
-              Kapat
-            </button>
+            <div className="flex items-center space-x-2 shrink-0">
+              {launchMessage.showTroubleshoot && (
+                <button
+                  id="btn-troubleshoot-refresh-app-discovery"
+                  onClick={handleRefreshAppDiscovery}
+                  disabled={isScanningApps}
+                  className="px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center space-x-1.5 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                  title="TV uygulama listesini ve YouTube kimliğini yeniden tara"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isScanningApps ? 'animate-spin' : ''}`} />
+                  <span>Refresh App Discovery</span>
+                </button>
+              )}
+              <button
+                onClick={() => setLaunchMessage(null)}
+                className="text-slate-400 hover:text-slate-200 ml-2 text-xs cursor-pointer"
+              >
+                Kapat
+              </button>
+            </div>
           </div>
         )}
 
@@ -429,6 +526,211 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
                 <Youtube className="w-4 h-4" />
                 <span>{isLaunching ? 'Başlatılıyor...' : 'TV\'de YouTube Aç'}</span>
               </button>
+            </div>
+
+            {/* Dynamic Runtime App Discovery & Troubleshooting Bar */}
+            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 text-xs space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-slate-400 font-medium">YouTube App ID:</span>
+                  <code className="px-2 py-0.5 rounded bg-slate-950 font-mono text-amber-300 font-semibold border border-slate-700/80 shadow-inner">
+                    {resolvedYtId}
+                  </code>
+                  <span className="text-[11px] text-emerald-400 font-medium px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/50">
+                    {discoveredCount > 0 ? `${discoveredCount} Uygulama Algılandı` : 'Dinamik Algılama'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowDiscoveryDetails(!showDiscoveryDetails)}
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 underline flex items-center gap-1 cursor-pointer ml-1"
+                    title="Sorun giderme ve bulunan uygulamaları incele"
+                  >
+                    <span>{showDiscoveryDetails ? 'Ayrıntıları Gizle' : 'Sorun Giderme & Uygulamalar'}</span>
+                    {showDiscoveryDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </div>
+
+                {/* Primary Requested Action: Refresh App Discovery */}
+                <button
+                  id="btn-refresh-app-discovery"
+                  onClick={handleRefreshAppDiscovery}
+                  disabled={isScanningApps}
+                  className="text-xs text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 px-3 py-1.5 rounded-lg transition font-semibold flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 shadow-sm border border-indigo-500/50"
+                  title="TV'deki aktif ve yüklü uygulamaları yeniden tara (başlatma sorunlarını gidermek için)"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isScanningApps ? 'animate-spin' : ''}`} />
+                  <span>{isScanningApps ? 'Taranıyor...' : 'Refresh App Discovery'}</span>
+                </button>
+              </div>
+
+              {/* Troubleshooting & Discovered Apps Expansion */}
+              {showDiscoveryDetails && (
+                <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-2 mt-1">
+                  <div className="flex items-start gap-2 text-slate-300">
+                    <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-white">App Discovery Sorun Giderme Rehberi:</span>
+                      <p className="mt-0.5 text-slate-300 leading-relaxed text-[11px]">
+                        Eğer YouTube TV'de açılmıyorsa; <strong>"Refresh App Discovery"</strong> butonuna tıklayarak
+                        Samsung Smart TV'nizden (TU8500 / T-NKLDEUC) güncel uygulama listesini canlı olarak yeniden çekebilirsiniz.
+                        Sistem WebSocket EDEN kanalı (<code>ed.installedApp.get</code>) ve REST port 8001 üzerinden TV'deki aktif
+                        YouTube paket kimliğini (<code>111299001912</code>, <code>9Ur5IzDKqV.TizenYouTube</code> vb.) otomatik doğrular.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Discovered Apps List Preview */}
+                  {discoveredAppsList.length > 0 ? (
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <div className="text-[11px] font-semibold text-slate-400 mb-1.5 flex items-center justify-between">
+                        <span>TV'de Algılanan Yüklü Uygulamalar ({discoveredAppsList.length}):</span>
+                        <span className="text-[10px] text-emerald-400 font-mono">Aktif Bağlantı: Port 8002 WSS</span>
+                      </div>
+                      <div className="max-h-36 overflow-y-auto space-y-1 pr-1 font-mono text-[11px]">
+                        {discoveredAppsList.map((app) => (
+                          <div
+                            key={app.appId}
+                            className={`flex items-center justify-between p-1.5 rounded border ${
+                              app.appId === resolvedYtId
+                                ? 'bg-indigo-950/50 border-indigo-600/60 text-indigo-200 font-semibold'
+                                : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2 truncate">
+                              <span className="truncate">{app.name}</span>
+                              {app.appId === resolvedYtId && (
+                                <span className="text-[9px] px-1 py-0.2 bg-indigo-500 text-white rounded font-sans">
+                                  Aktif YouTube
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2 shrink-0">
+                              <span className="text-slate-400 text-[10px]">{app.appId}</span>
+                              <span className="text-[9px] px-1 py-0.2 bg-slate-800 text-slate-400 rounded">
+                                {app.source === 'websocket_eden' ? 'EDEN WSS' : 'REST'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>Henüz TV'den uygulama listesi önbelleğe alınmadı.</span>
+                      <button
+                        type="button"
+                        onClick={handleRefreshAppDiscovery}
+                        disabled={isScanningApps}
+                        className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                      >
+                        Şimdi Tara
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Granular Event Log & Exact Payload Diagnostic */}
+                  <div className="pt-2.5 border-t border-slate-800/80 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-semibold">
+                      <div className="flex items-center space-x-1.5 text-slate-300">
+                        <Terminal className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Son Uygulama Başlatma Telemetrisi (Granular Event Log):</span>
+                      </div>
+                      {lastTelemetry && (
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-mono border ${
+                              lastTelemetry.responseStatus === 'SUCCESS_200'
+                                ? 'bg-emerald-950/70 border-emerald-700 text-emerald-300'
+                                : lastTelemetry.responseStatus === 'ERROR_404'
+                                ? 'bg-rose-950/70 border-rose-700 text-rose-300'
+                                : lastTelemetry.responseStatus === 'PERMISSION_DENIED_AUTH'
+                                ? 'bg-amber-950/70 border-amber-700 text-amber-300'
+                                : lastTelemetry.responseStatus === 'ERROR_PAYLOAD'
+                                ? 'bg-purple-950/70 border-purple-700 text-purple-300'
+                                : 'bg-slate-800 border-slate-700 text-slate-300'
+                            }`}
+                          >
+                            {lastTelemetry.responseStatus}
+                          </span>
+                          <span className="text-[10px] text-slate-400">{lastTelemetry.timestamp}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {lastTelemetry ? (
+                      <div className="space-y-2 font-mono text-[11px]">
+                        {/* Diagnosis Banner */}
+                        <div
+                          className={`p-2 rounded border leading-relaxed ${
+                            lastTelemetry.responseStatus === 'SUCCESS_200'
+                              ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                              : lastTelemetry.responseStatus === 'ERROR_404'
+                              ? 'bg-rose-950/40 border-rose-800/60 text-rose-200'
+                              : lastTelemetry.responseStatus === 'PERMISSION_DENIED_AUTH'
+                              ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
+                              : 'bg-slate-900 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <div className="font-sans font-semibold text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">
+                            Firmware Tanısı (T-NKLDEUC / TU8500):
+                          </div>
+                          {lastTelemetry.diagnosis}
+                        </div>
+
+                        {/* Exact JSON Outbound Payload */}
+                        <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="text-amber-300 font-semibold font-sans">
+                              TV'ye Gönderilen Doğrulanmış JSON Yükü (Port 8002 WSS):
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(lastTelemetry.outboundEdenJson);
+                                setCopiedPayload(true);
+                                setTimeout(() => setCopiedPayload(false), 2000);
+                              }}
+                              className="text-[10px] text-slate-300 hover:text-white flex items-center space-x-1 cursor-pointer"
+                              title="JSON Yükünü Kopyala"
+                            >
+                              {copiedPayload ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span className="text-emerald-400">Kopyalandı</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3 text-slate-400" />
+                                  <span>Kopyala</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <pre className="text-[10px] text-slate-300 overflow-x-auto max-h-28 p-1 bg-slate-900/90 rounded border border-slate-800">
+                            {lastTelemetry.outboundEdenJson}
+                          </pre>
+                        </div>
+
+                        {/* TV Response Payload if available */}
+                        {lastTelemetry.rawResponseJson && (
+                          <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1">
+                            <div className="text-[10px] text-emerald-400 font-semibold font-sans">
+                              TV'den Alınan WebSocket Yanıtı ({lastTelemetry.responseEvent || 'ed.apps.launch'}):
+                            </div>
+                            <pre className="text-[10px] text-emerald-300 overflow-x-auto max-h-24 p-1 bg-slate-900/90 rounded border border-slate-800">
+                              {lastTelemetry.rawResponseJson}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 italic">
+                        Henüz uygulama başlatma isteği gönderilmedi. "TV'de YouTube Aç" butonuna basıldığında TV'ye iletilen tam JSON yükü ve Samsung WebSocket yanıtı burada anlık olarak raporlanacaktır.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* In-App Media Keys for TV */}

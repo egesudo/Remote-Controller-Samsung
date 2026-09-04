@@ -22,6 +22,7 @@ import {
 import { defaultValidator } from './commandValidator.ts';
 import { ModularAppLauncher } from './modularAppLauncher.ts';
 import { SamsungWebSocket } from './samsungWebSocket.ts';
+import { volumeManager } from './volumeManager.ts';
 
 const TOKEN_STORAGE_KEY_PREFIX = 'samsung_tv_token_';
 
@@ -53,7 +54,11 @@ export class SamsungTVController implements ITVController {
 
     this.appLauncher = new ModularAppLauncher(
       () => this.currentConfig?.host || '',
-      (event, data) => this.socket.emitEvent(event, data)
+      (event, data) => this.socket.emitEvent(event, data),
+      (packet) => this.socket.sendRawPacket(packet),
+      () => this.socket.isOpen() && this.socket.getState() === 'CONNECTED',
+      (level, msg, data) => this.log(level, msg, data),
+      (appId, appName) => this.socket.trackPendingAppLaunch(appId, appName)
     );
   }
 
@@ -191,6 +196,7 @@ export class SamsungTVController implements ITVController {
 
     const success = this.socket.sendRemoteKey(key);
     if (success) {
+      volumeManager.onKeyDispatched(key);
       this.log('success', `Executed verified command: ${key}`);
     }
     return success;

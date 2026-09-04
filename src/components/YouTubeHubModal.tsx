@@ -135,7 +135,9 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
 
     try {
       const payload = videoId ? `v=${videoId}` : undefined;
-      const success = await tvController.appLauncher.launchApp('111299001912', payload);
+      const success = tvController.appLauncher.launchYouTube
+        ? await tvController.appLauncher.launchYouTube(payload)
+        : await tvController.appLauncher.launchApp('111299001912', payload);
 
       if (success) {
         setLaunchMessage({

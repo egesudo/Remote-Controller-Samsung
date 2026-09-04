@@ -725,8 +725,9 @@ ACTION TYPES & MAPPING RULES:
 
 2. TV Controls (Volume, Channel, Navigation, Media, Power):
    - Volume:
-     - Volume up ("turn up volume", "louder", "sesi aç", "sesi 10 birim artır", "sesi 10 birim arttır", "sesi 3 kere artır", "sesi 10 kademe arttır", "sesi 10 kademe artır", "sesi 5 kademe yükselt", "ses artır", "sesi arttır") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLUP', ...], repeatCount: N
-     - Volume down ("turn down volume", "quieter", "sesi kıs", "sesi 10 birim azalt", "sesi 5 birim kıs", "sesi 10 kademe azalt", "sesi 5 kademe kıs", "sesi düşür") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLDOWN', ...], repeatCount: N
+     - Volume up ("turn up volume", "louder", "sesi aç", "sesi 2 artır", "sesi 10 birim artır", "sesi 10 birim arttır", "sesi 3 kere artır", "sesi 10 kademe arttır", "sesi 10 kademe artır", "sesi 5 kademe yükselt", "ses artır", "sesi arttır") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLUP', ...], repeatCount: N
+     - Volume down ("turn down volume", "quieter", "sesi kıs", "sesi 5 azalt", "sesi 10 birim azalt", "sesi 5 birim kıs", "sesi 10 kademe azalt", "sesi 5 kademe kıs", "sesi düşür") -> actionType: 'SEND_KEY' or 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLDOWN', ...], repeatCount: N
+     - Target / Absolute volume ("sesi 20 yap", "sesi 20 seviyesine getir", "sesi 15 yap", "sesi 25 seviyesine ayarla", "set volume to 20") -> actionType: 'KEY_SEQUENCE', requestedKeys: ['KEY_VOLUP' | 'KEY_VOLDOWN', ...], repeatCount: N
      - Mute ("mute", "unmute", "silence", "sesi kapat", "sesi kes", "sessize al") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_MUTE']
    - Channels:
      - Next channel ("channel up", "next channel", "sonraki kanal", "kanalı değiştir", "kanal değiştir") -> actionType: 'SEND_KEY', requestedKeys: ['KEY_CHUP']

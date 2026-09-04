@@ -19,12 +19,14 @@
 import { ValidRemoteKey } from '../types/tv.types.ts';
 import { StructuredVoiceIntent, VoiceActionType } from '../types/voice.types.ts';
 import { KNOWN_TV_APPS } from './modularAppLauncher.ts';
+import { volumeManager } from './volumeManager.ts';
 
 export type SemanticCategory =
   | 'POWER_ON'
   | 'POWER_OFF'
   | 'VOLUME_UP'
   | 'VOLUME_DOWN'
+  | 'VOLUME_SET'
   | 'MUTE'
   | 'CHANNEL_UP'
   | 'CHANNEL_DOWN'
@@ -88,6 +90,14 @@ const WORD_NUMBERS: Record<string, number> = {
   'on sekiz': 18, 'onsekiz': 18, 'eighteen': 18,
   'on dokuz': 19, 'ondokuz': 19, 'nineteen': 19,
   'yirmi': 20, 'twenty': 20,
+  'yirmi bir': 21, 'yirmibir': 21,
+  'yirmi iki': 22, 'yirmiiki': 22,
+  'yirmi üç': 23, 'yirmiüç': 23,
+  'yirmi dört': 24, 'yirmidört': 24,
+  'yirmi beş': 25, 'yirmibeş': 25,
+  'otuz': 30, 'thirty': 30,
+  'kırk': 40, 'forty': 40,
+  'elli': 50, 'fifty': 50,
 };
 
 // Recognized unit nouns in speech
@@ -107,32 +117,43 @@ export function normalizeTranscript(text: string): string {
 
 /**
  * Extracts numeric quantity or word quantity accompanied by a unit
- * e.g.:
- * "10 birim artır" -> { count: 10, unit: 'birim' }
- * "on birim artır" -> { count: 10, unit: 'birim' }
- * "5 kademe kıs"   -> { count: 5,  unit: 'kademe' }
- * "3 kere bas"     -> { count: 3,  unit: 'kere' }
+ * Handles broad, natural phrasing:
+ * - "sesi 2 artır" -> { count: 2 }
+ * - "sesi 5 azalt" -> { count: 5 }
+ * - "10 birim artır" -> { count: 10, unit: 'birim' }
+ * - "on birim artır" -> { count: 10, unit: 'birim' }
+ * - "sesi biraz artır" -> { count: 2, unit: 'biraz' }
+ * - "sesi çok artır" -> { count: 5, unit: 'çok' }
  */
 export function extractQuantityAndUnit(text: string): { count: number; unit?: string } {
   const clean = normalizeTranscript(text);
 
-  // 1. Numeric digit with optional unit noun
-  // e.g. "10 birim", "10 kademe", "10 kere", "10"
+  // Check for qualitative quantities
+  if (clean.includes('biraz')) {
+    return { count: 2, unit: 'biraz' };
+  }
+  if (clean.includes('cok') || clean.includes('çok') || clean.includes('fazla')) {
+    return { count: 5, unit: 'çok' };
+  }
+
+  // 1. Numeric digit with optional unit noun or verb
+  // e.g. "2 artır", "5 azalt", "10 birim", "10 kademe", "10 kere", "10"
   const digitRegex = new RegExp(`(\\d+)\\s*(${UNIT_NOUNS_PATTERN})?`, 'i');
   const digitMatch = clean.match(digitRegex);
   if (digitMatch && digitMatch[1]) {
     const val = parseInt(digitMatch[1], 10);
     if (!isNaN(val) && val > 0) {
       return {
-        count: Math.min(val, 20), // capped safely at 20 commands
+        count: Math.min(val, 25), // capped safely at 25 commands
         unit: digitMatch[2] || undefined,
       };
     }
   }
 
   // 2. Word-based number with optional unit noun
-  // e.g. "on birim", "beş kademe", "üç kere"
-  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
+  // Sort descending by string length so multi-word numbers like "on beş" match before "on"
+  const sortedWords = Object.entries(WORD_NUMBERS).sort((a, b) => b[0].length - a[0].length);
+  for (const [word, num] of sortedWords) {
     const wordRegex = new RegExp(`\\b${word}\\s*(${UNIT_NOUNS_PATTERN})?\\b`, 'i');
     const wordMatch = clean.match(wordRegex);
     if (wordMatch) {
@@ -196,17 +217,21 @@ export class SemanticVoiceMapper {
     const powerResult = this.checkPowerSemantics(rawTranscript, normalized);
     if (powerResult) return powerResult;
 
-    // 3. Volume Up Semantics (e.g. "Sesi 10 birim artır", "Sesi 10 birim arttır", "Sesi aç", "Volume up")
+    // 3. Target Volume Semantics (e.g. "Sesi 20 seviyesine getir", "Sesi 15 yap", "Sesi 20 yap", "Set volume to 20")
+    const targetVolResult = this.checkTargetVolumeSemantics(rawTranscript, normalized);
+    if (targetVolResult) return targetVolResult;
+
+    // 4. Mute Semantics (e.g. "Sesi kapat", "Sesi kes", "Sessize al", "Mute")
+    const muteResult = this.checkMuteSemantics(rawTranscript, normalized);
+    if (muteResult) return muteResult;
+
+    // 5. Volume Up Semantics (e.g. "Sesi 2 artır", "2 artır", "Sesi 10 birim artır", "Sesi aç", "Volume up")
     const volUpResult = this.checkVolumeUpSemantics(rawTranscript, normalized);
     if (volUpResult) return volUpResult;
 
-    // 4. Volume Down Semantics (e.g. "Sesi 10 birim azalt", "Sesi 5 birim kıs", "Sesi düşür")
+    // 6. Volume Down Semantics (e.g. "Sesi 5 azalt", "5 azalt", "Sesi 5 birim kıs", "Sesi düşür")
     const volDownResult = this.checkVolumeDownSemantics(rawTranscript, normalized);
     if (volDownResult) return volDownResult;
-
-    // 5. Mute Semantics (e.g. "Sesi kapat", "Sesi kes", "Sessize al", "Mute")
-    const muteResult = this.checkMuteSemantics(rawTranscript, normalized);
-    if (muteResult) return muteResult;
 
     // 6. Channel Navigation Semantics (e.g. "Kanalı değiştir", "Sonraki kanal", "Önceki kanal")
     const channelResult = this.checkChannelSemantics(rawTranscript, normalized);
@@ -330,37 +355,162 @@ export class SemanticVoiceMapper {
   }
 
   /**
-   * Maps Volume Up commands with units/birim
+   * Maps Target / Absolute Volume Level commands
+   * Handles broad, natural phrasing:
+   * - "sesi 20 seviyesine getir"
+   * - "sesi 15 yap"
+   * - "sesi 20 yap"
+   * - "sesi 15 seviyesine ayarla"
+   * - "ses seviyesini 20 yap"
+   * - "ses seviyesi 15 olsun"
+   * - "sesi 25'e getir"
+   * - "sesi 10'a çek"
+   * - "sesi 30 yap"
+   * - "sesi yirmi yap", "sesi on beş yap"
+   * - "set volume to 20", "make volume 15", "volume 20"
+   */
+  private static checkTargetVolumeSemantics(raw: string, clean: string): SemanticMappingResult | null {
+    const hasSound = clean.includes('ses') || clean.includes('volume') || clean.includes('sound');
+    const hasTargetVerb =
+      clean.includes('yap') ||
+      clean.includes('getir') ||
+      clean.includes('ayarla') ||
+      clean.includes('olsun') ||
+      clean.includes('cek') ||
+      clean.includes('çek') ||
+      clean.includes('seviye') ||
+      clean.includes('kademe') ||
+      clean.includes('derece') ||
+      clean.includes('set') ||
+      clean.includes('make');
+
+    // If it's pure relative increase/decrease without target words, let relative handlers take it
+    const isExplicitRelative =
+      (clean.includes('art') || clean.includes('yukselt') || clean.includes('yükselt') || clean.includes('azalt') || clean.includes('kis') || clean.includes('kıs') || clean.includes('dusur') || clean.includes('düşür')) &&
+      !clean.includes('seviye') &&
+      !clean.includes('getir') &&
+      !clean.includes('yap') &&
+      !clean.includes('ayarla');
+
+    if (isExplicitRelative) return null;
+    if (!hasSound && !clean.match(/^\d+\s*(?:seviyesine|yap|getir|ayarla)/)) return null;
+    if (!hasTargetVerb && !clean.includes('to')) return null;
+
+    let target: number | undefined;
+
+    // 1. Digits match:
+    // e.g. "sesi 20 seviyesine getir", "sesi 15 yap", "sesi 20 yap", "ses 25 olsun", "sesi 10'a çek"
+    const digitMatch =
+      clean.match(/(?:ses(?:i|ini| seviyesini| seviyesi)?|volume)\s*(?:seviyesini|seviyesi)?\s*(\d+)/i) ||
+      clean.match(/(\d+)\s*(?:'?[ye|ya|e|a])?\s*(?:seviyesine|derecesine|kademesine)?\s*(?:getir|yap|ayarla|cek|çek|olsun)/i) ||
+      clean.match(/(?:set|make|turn|change)\s*(?:the\s*)?volume\s*(?:to\s*)?(\d+)/i) ||
+      clean.match(/(?:volume|ses)\s*(?:to\s*)?(\d+)/i) ||
+      clean.match(/(\d+)\s*(?:yap|ayarla|getir)/i);
+
+    if (digitMatch && digitMatch[1]) {
+      const parsed = parseInt(digitMatch[1], 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+        target = parsed;
+      }
+    }
+
+    // 2. Word-based numbers match:
+    // e.g. "sesi yirmi yap", "sesi on beş yap", "sesi yirmi seviyesine getir"
+    if (target === undefined) {
+      const sortedWords = Object.entries(WORD_NUMBERS).sort((a, b) => b[0].length - a[0].length);
+      for (const [word, num] of sortedWords) {
+        if (
+          clean.includes(word) &&
+          (clean.includes('yap') ||
+            clean.includes('getir') ||
+            clean.includes('ayarla') ||
+            clean.includes('olsun') ||
+            clean.includes('seviye') ||
+            clean.includes('set') ||
+            clean.includes('make'))
+        ) {
+          target = num;
+          break;
+        }
+      }
+    }
+
+    if (target === undefined) return null;
+
+    // Calculate transition sequence and update estimated volume
+    const { keys, delta, currentLevel, targetLevel } = volumeManager.calculateKeysForTargetVolume(target);
+    volumeManager.setEstimatedVolume(targetLevel);
+
+    const explanation =
+      delta === 0
+        ? `TV Ses Seviyesi Zaten ${targetLevel} Seviyesinde (Tahmini: ${currentLevel})`
+        : delta > 0
+          ? `TV Ses Seviyesini ${targetLevel} Seviyesine Getir (+${delta} Adım / ${delta}x KEY_VOLUP) [Tahmini: ${currentLevel} -> ${targetLevel}]`
+          : `TV Ses Seviyesini ${targetLevel} Seviyesine Getir (-${Math.abs(delta)} Adım / ${Math.abs(delta)}x KEY_VOLDOWN) [Tahmini: ${currentLevel} -> ${targetLevel}]`;
+
+    return {
+      matched: true,
+      category: 'VOLUME_SET',
+      actionType: keys.length > 1 ? 'KEY_SEQUENCE' : 'SEND_KEY',
+      targetKey: keys[0] || 'KEY_VOLUP',
+      targetKeys: keys,
+      repeatCount: keys.length,
+      extractedUnits: targetLevel,
+      unitLabel: 'seviye',
+      explanation,
+      confidence: 0.99,
+      rawTranscript: raw,
+      normalizedTranscript: clean,
+    };
+  }
+
+  /**
+   * Maps Volume Up commands broadly without requiring rigid phrasing
    * Handles:
-   * - "Sesi 10 birim artır"
-   * - "Sesi 10 birim arttır"
-   * - "Sesi 5 kademe artır"
-   * - "Sesi aç"
-   * - "Sesi yükselt"
-   * - "Turn up volume 10 units"
+   * - "Sesi 2 artır" / "Sesi 2 arttır"
+   * - "2 artır" / "2 arttır"
+   * - "Sesi 10 birim artır" / "Sesi 5 kademe artır"
+   * - "Sesi aç" / "Sesi yükselt" / "Sesi biraz artır" / "Sesi çok artır"
+   * - "Biraz aç" / "Ses 3 artsın" / "Volume up" / "Turn up"
    */
   private static checkVolumeUpSemantics(raw: string, clean: string): SemanticMappingResult | null {
-    // Check if sentence conveys volume increase
+    // Exclude channel navigation
+    if (clean.includes('kanal') || clean.includes('channel')) return null;
+
     const hasSoundWord = clean.includes('ses') || clean.includes('volume') || clean.includes('sound');
     const hasIncreaseAction =
-      clean.includes('art') || // artır, arttır, artırsana, artıralım
-      clean.includes('yukselt') || // yükselt, yukselt
+      clean.includes('art') || // artır, arttır, artsın, artıralım
+      clean.includes('yukselt') ||
       clean.includes('yükselt') ||
-      clean.includes('ac') || // aç, sesi aç
-      clean.includes('aç') ||
-      clean.includes('fazlalastir') ||
       clean.includes('turn up') ||
       clean.includes('increase') ||
       clean.includes('louder');
 
-    // Specific match: starts or contains volume increase
-    const isVolUp = (hasSoundWord && hasIncreaseAction) || clean.includes('volume up') || clean.includes('louder');
+    // Direct standalone volume up phrases
+    const isDirectVolUp =
+      (hasSoundWord && hasIncreaseAction) ||
+      clean.includes('volume up') ||
+      clean.includes('louder') ||
+      clean.includes('turn up') ||
+      clean === 'ses aç' ||
+      clean === 'sesi aç' ||
+      clean === 'biraz aç' ||
+      clean.includes('sesi biraz artır') ||
+      clean.includes('sesi çok artır') ||
+      /^\d+\s*(?:art|yükselt|yukselt)/i.test(clean) ||
+      clean.includes('artır') ||
+      clean.includes('arttır') ||
+      clean.includes('yükselt') ||
+      clean.includes('yukselt');
 
-    if (!isVolUp) return null;
+    if (!isDirectVolUp) return null;
 
     const { count, unit } = extractQuantityAndUnit(clean);
     const keys = Array(count).fill('KEY_VOLUP') as ValidRemoteKey[];
     const unitText = unit ? ` ${unit}` : (count > 1 ? ' adım' : '');
+
+    // Synchronize volume manager state
+    volumeManager.adjustVolume(count);
 
     return {
       matched: true,
@@ -381,35 +531,58 @@ export class SemanticVoiceMapper {
   }
 
   /**
-   * Maps Volume Down commands with units/birim
+   * Maps Volume Down commands broadly without requiring rigid phrasing
    * Handles:
-   * - "Sesi 10 birim azalt"
-   * - "Sesi 10 birim kıs"
-   * - "Sesi 5 kademe kıs"
-   * - "Sesi düşür"
-   * - "Turn down volume 5 units"
+   * - "Sesi 5 azalt"
+   * - "5 azalt" / "5 kıs"
+   * - "Sesi 2 kıs" / "2 kıs"
+   * - "Sesi 10 birim azalt" / "Sesi 5 kademe kıs"
+   * - "Sesi kıs" / "Sesi düşür" / "Sesi alçalt"
+   * - "Biraz kıs" / "Sesi biraz kıs" / "Turn down volume"
    */
   private static checkVolumeDownSemantics(raw: string, clean: string): SemanticMappingResult | null {
+    // Exclude channel navigation
+    if (clean.includes('kanal') || clean.includes('channel')) return null;
+
     const hasSoundWord = clean.includes('ses') || clean.includes('volume') || clean.includes('sound');
     const hasDecreaseAction =
-      clean.includes('kis') || // kıs, kısar mısın
+      clean.includes('kis') || // kıs, kısar mısın, kısın
       clean.includes('kıs') ||
       clean.includes('azalt') ||
-      clean.includes('dusur') || // düşür
+      clean.includes('azalsın') ||
+      clean.includes('dusur') ||
       clean.includes('düşür') ||
       clean.includes('alcalt') ||
+      clean.includes('alçalt') ||
       clean.includes('turn down') ||
       clean.includes('decrease') ||
       clean.includes('quieter') ||
       clean.includes('softer');
 
-    const isVolDown = (hasSoundWord && hasDecreaseAction) || clean.includes('volume down') || clean.includes('quieter');
+    // Direct standalone volume down phrases
+    const isDirectVolDown =
+      (hasSoundWord && hasDecreaseAction) ||
+      clean.includes('volume down') ||
+      clean.includes('quieter') ||
+      clean.includes('turn down') ||
+      clean === 'biraz kıs' ||
+      clean === 'biraz azalt' ||
+      clean === 'sesi kıs' ||
+      clean === 'ses kıs' ||
+      clean.includes('sesi biraz kıs') ||
+      /^\d+\s*(?:azalt|kıs|kis|düşür|dusur)/i.test(clean) ||
+      clean.includes('azalt') ||
+      clean.includes('düşür') ||
+      clean.includes('alçalt');
 
-    if (!isVolDown) return null;
+    if (!isDirectVolDown) return null;
 
     const { count, unit } = extractQuantityAndUnit(clean);
     const keys = Array(count).fill('KEY_VOLDOWN') as ValidRemoteKey[];
     const unitText = unit ? ` ${unit}` : (count > 1 ? ' adım' : '');
+
+    // Synchronize volume manager state
+    volumeManager.adjustVolume(-count);
 
     return {
       matched: true,
@@ -806,7 +979,7 @@ export class SemanticVoiceMapper {
       };
     }
 
-    // 3. YouTube Launch
+    // 3. YouTube Launch & Broadcast
     if (
       clean === 'youtube' ||
       clean === 'you tube' ||
@@ -821,6 +994,14 @@ export class SemanticVoiceMapper {
       clean.includes('youtubeu aç') ||
       clean.includes('youtube baslat') ||
       clean.includes('youtube başlat') ||
+      clean.includes('youtubea gir') ||
+      clean.includes('youtubea baglan') ||
+      clean.includes('youtube yayini') ||
+      clean.includes('youtube yayını') ||
+      clean.includes('televizyonda youtube') ||
+      clean.includes('tvde youtube') ||
+      clean.includes('youtube uygulamasini') ||
+      clean.includes('youtube uygulamasını') ||
       clean.includes('video ac') ||
       clean.includes('video aç') ||
       clean.includes('video izle')
@@ -831,7 +1012,7 @@ export class SemanticVoiceMapper {
         actionType: 'LAUNCH_APP',
         targetKeys: [],
         repeatCount: 0,
-        explanation: 'YouTube Uygulamasını Başlat',
+        explanation: 'YouTube TV Uygulamasını Başlat',
         confidence: 0.98,
         rawTranscript: raw,
         normalizedTranscript: clean,

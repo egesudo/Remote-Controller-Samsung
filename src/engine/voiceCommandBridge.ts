@@ -64,7 +64,10 @@ export class VoiceCommandBridge {
       const targetAppId = (intent.targetAppId || KNOWN_TV_APPS.YOUTUBE.id).trim();
 
       // Strict check: Only authorized YouTube application ID permitted
-      if (targetAppId !== KNOWN_TV_APPS.YOUTUBE.id) {
+      const isAuthorizedYouTube =
+        targetAppId === KNOWN_TV_APPS.YOUTUBE.id ||
+        (KNOWN_TV_APPS.YOUTUBE.alternateIds as readonly string[])?.includes(targetAppId);
+      if (!isAuthorizedYouTube) {
         const errorMsg = `Security Violation: App ID '${targetAppId}' is not authorized for YouTube playback.`;
         this.controller.log('error', `[VOICE GATE] ${errorMsg}`);
         return {
@@ -155,7 +158,10 @@ export class VoiceCommandBridge {
     if (intent.actionType === 'YOUTUBE_SEARCH') {
       const targetAppId = (intent.targetAppId || KNOWN_TV_APPS.YOUTUBE.id).trim();
 
-      if (targetAppId !== KNOWN_TV_APPS.YOUTUBE.id) {
+      const isAuthorizedYouTube =
+        targetAppId === KNOWN_TV_APPS.YOUTUBE.id ||
+        (KNOWN_TV_APPS.YOUTUBE.alternateIds as readonly string[])?.includes(targetAppId);
+      if (!isAuthorizedYouTube) {
         const errorMsg = `Security Violation: App ID '${targetAppId}' is not authorized for YouTube search.`;
         this.controller.log('error', `[VOICE GATE] ${errorMsg}`);
         return {
@@ -237,7 +243,7 @@ export class VoiceCommandBridge {
 
       // Validate that the requested App ID is in the approved KNOWN_TV_APPS registry
       const approvedApp = Object.values(KNOWN_TV_APPS).find(
-        (app) => app.id === targetAppId
+        (app) => app.id === targetAppId || (app as any).alternateIds?.includes(targetAppId)
       );
 
       if (!approvedApp) {

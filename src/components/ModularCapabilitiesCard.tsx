@@ -43,7 +43,7 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
       name: 'YouTube Kontrol Modülü (IAppLauncher)',
       phase: 'Faz 5 (Aktif)',
       status: 'UYGULANDI',
-      details: `Hedef Uygulama ID: ${KNOWN_TV_APPS.YOUTUBE.id} (Tizen YouTube Uygulaması, Derin Bağlantı v=ID)`,
+      details: `Hedef Uygulama ID: ${KNOWN_TV_APPS.YOUTUBE.id} (${KNOWN_TV_APPS.YOUTUBE.platformSeries}, Derin Bağlantı v=ID)`,
       color: 'emerald',
     },
     {
@@ -110,9 +110,10 @@ export const ModularCapabilitiesCard: React.FC<ModularCapabilitiesCardProps> = (
       <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="text-xs text-slate-600">
           <span className="font-semibold text-slate-800">YouTube Yeteneği:</span> Hedef Uygulama ID{' '}
-          <code className="bg-slate-100 px-1 py-0.5 rounded text-red-700 font-mono">
+          <code className="bg-slate-100 px-1 py-0.5 rounded text-red-700 font-mono font-bold">
             {KNOWN_TV_APPS.YOUTUBE.id}
-          </code>
+          </code>{' '}
+          <span className="text-[11px] text-slate-500 font-medium">({KNOWN_TV_APPS.YOUTUBE.platformSeries})</span>
         </div>
         <div className="flex items-center gap-2">
           {onOpenYouTubeHub && (

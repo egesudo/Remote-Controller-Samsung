@@ -57,6 +57,11 @@ export class SamsungWebSocket {
   private currentToken: string | null = null;
   private autoReconnect = false;
   private maxReconnectAttempts = 5;
+  private pendingAppLaunch: {
+    appId: string;
+    appName: string;
+    dispatchedAt: number;
+  } | null = null;
 
   constructor(private events: Partial<SamsungWebSocketEvents> = {}) {}
 
@@ -246,6 +251,22 @@ export class SamsungWebSocket {
   }
 
   /**
+   * Tracks an outgoing app launch intent to correlate asynchronous TV responses
+   */
+  public trackPendingAppLaunch(appId: string, appName = 'YouTube'): void {
+    const cleanAppId = String(appId).trim();
+    this.pendingAppLaunch = {
+      appId: cleanAppId,
+      appName,
+      dispatchedAt: Date.now(),
+    };
+    this.events.onLog?.(
+      'info',
+      `[WebSocket:AppLaunch:TRACK] Awaiting TV status confirmation for ${appName} (ID: "${cleanAppId}", Type: string)...`
+    );
+  }
+
+  /**
    * Processes inbound frames from the Samsung Remote Channel
    */
   private handleIncomingMessage(msg: Record<string, unknown>) {
@@ -253,6 +274,10 @@ export class SamsungWebSocket {
     const data = (msg.data as Record<string, unknown>) || {};
 
     this.events.onMessage?.(event, msg);
+
+    // Provide low-level frame telemetry for live debugging
+    const rawFrameStr = JSON.stringify(msg.data !== undefined ? msg.data : msg);
+    this.events.onLog?.('info', `[WebSocket:DEBUG:FRAME] Event="${event || 'unnamed'}" | Data: ${rawFrameStr.slice(0, 240)}`);
 
     switch (event) {
       case 'ms.channel.connect': {
@@ -295,7 +320,115 @@ export class SamsungWebSocket {
       }
 
       case 'ms.error': {
-        this.events.onLog?.('error', 'TV error event received', msg);
+        const isRecentLaunch = Boolean(
+          this.pendingAppLaunch && Date.now() - this.pendingAppLaunch.dispatchedAt < 10000
+        );
+        const appLabel = isRecentLaunch
+          ? ` [During launch of ${this.pendingAppLaunch?.appName} (ID: ${this.pendingAppLaunch?.appId})]`
+          : '';
+
+        const errCode = (data as Record<string, unknown>).code ?? (msg as Record<string, unknown>).code ?? 'UNKNOWN';
+        const errMsg = (data as Record<string, unknown>).message ?? (msg as Record<string, unknown>).message ?? JSON.stringify(msg);
+
+        this.events.onLog?.(
+          'error',
+          `[WebSocket:AppLaunch:ERROR] ✗ Samsung TV returned error${appLabel}: Code=${errCode} - ${errMsg}`,
+          msg
+        );
+        break;
+      }
+
+      case 'ed.apps.launch': {
+        // Evaluate raw return value from Samsung Tizen firmware
+        let statusCode: number | null = null;
+        let statusString: string | null = null;
+
+        if (typeof msg.data === 'number') {
+          statusCode = msg.data;
+        } else if (typeof msg.data === 'string') {
+          const parsed = parseInt(msg.data, 10);
+          if (!isNaN(parsed)) statusCode = parsed;
+          else statusString = msg.data;
+        } else if (typeof data === 'object' && data !== null) {
+          const candidate = (data as Record<string, unknown>).data ??
+                            (data as Record<string, unknown>).code ??
+                            (data as Record<string, unknown>).status;
+          if (typeof candidate === 'number') statusCode = candidate;
+          else if (typeof candidate === 'string') {
+            const parsed = parseInt(candidate, 10);
+            if (!isNaN(parsed)) statusCode = parsed;
+            else statusString = candidate;
+          }
+        }
+
+        const isRecentLaunch = Boolean(
+          this.pendingAppLaunch && Date.now() - this.pendingAppLaunch.dispatchedAt < 15000
+        );
+        const appLabel = isRecentLaunch && this.pendingAppLaunch
+          ? `[Target: ${this.pendingAppLaunch.appName} | ID: "${this.pendingAppLaunch.appId}"]`
+          : '[App Launch]';
+
+        if (statusCode === 200 || statusString === 'success' || msg.data === true) {
+          this.events.onLog?.(
+            'success',
+            `[WebSocket:AppLaunch:SUCCESS] ✓ Samsung TV confirmed app launch ${appLabel}: Status Code 200 OK via ed.apps.launch`,
+            msg
+          );
+        } else if (statusCode === 404) {
+          this.events.onLog?.(
+            'error',
+            `[WebSocket:AppLaunch:ERROR] ✗ Samsung TV returned Error Code 404 ${appLabel}: App ID not recognized or not installed on T-NKLDEUC firmware. Check Smart Hub installed apps.`,
+            msg
+          );
+        } else if (statusCode === 401 || statusCode === 403) {
+          this.events.onLog?.(
+            'error',
+            `[WebSocket:AppLaunch:ERROR] ✗ Samsung TV returned Permission Denied (HTTP ${statusCode}) ${appLabel}: WebSocket client lacks token authorization for app execution.`,
+            msg
+          );
+        } else if (statusCode !== null) {
+          this.events.onLog?.(
+            'warn',
+            `[WebSocket:AppLaunch:CODE] Samsung TV ed.apps.launch returned status code: ${statusCode} ${appLabel}`,
+            msg
+          );
+        } else {
+          this.events.onLog?.(
+            'info',
+            `[WebSocket:AppLaunch:DATA] Samsung TV ed.apps.launch received frame ${appLabel}: ${JSON.stringify(msg)}`,
+            msg
+          );
+        }
+        break;
+      }
+
+      case 'ms.application.start': {
+        const isRecentLaunch = Boolean(
+          this.pendingAppLaunch && Date.now() - this.pendingAppLaunch.dispatchedAt < 15000
+        );
+        const appLabel = isRecentLaunch && this.pendingAppLaunch
+          ? `[Target: ${this.pendingAppLaunch.appName} | ID: "${this.pendingAppLaunch.appId}"]`
+          : '[App Launch]';
+
+        this.events.onLog?.(
+          'success',
+          `[WebSocket:AppLaunch:SUCCESS] ✓ Samsung TV confirmed application start (ms.application.start) ${appLabel}`,
+          msg
+        );
+        break;
+      }
+
+      case 'ms.channel.emit': {
+        const innerEvent = typeof (data as Record<string, unknown>).event === 'string' ? (data as Record<string, unknown>).event : '';
+        if (innerEvent === 'ed.apps.launch') {
+          this.events.onLog?.(
+            'info',
+            `[WebSocket:AppLaunch:DEBUG] TV relayed ms.channel.emit with inner event ed.apps.launch: ${JSON.stringify(msg)}`,
+            msg
+          );
+        } else {
+          this.events.onLog?.('info', `TV channel emit event: ${innerEvent || 'unnamed'}`, data);
+        }
         break;
       }
 
@@ -363,6 +496,29 @@ export class SamsungWebSocket {
       this.events.onLog?.('error', `Failed to emit event ${event}: ${errorMsg}`);
       return false;
     }
+  }
+
+  /**
+   * Transmits an arbitrary structured JSON packet across the authenticated WebSocket connection
+   */
+  public sendRawPacket(packet: Record<string, unknown>): boolean {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.events.onLog?.('warn', 'Cannot send packet: WebSocket is not in OPEN state.');
+      return false;
+    }
+
+    try {
+      this.ws.send(JSON.stringify(packet));
+      return true;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.events.onLog?.('error', `Failed to transmit packet: ${errorMsg}`);
+      return false;
+    }
+  }
+
+  public isOpen(): boolean {
+    return Boolean(this.ws && this.ws.readyState === WebSocket.OPEN);
   }
 
   /**

@@ -386,122 +386,142 @@ export default function App() {
 
         {/* TAB 1: Mobile App Remote View */}
         {activeTab === 'mobile' && (
-          <div className="space-y-4">
-            {/* Real TV Verification Checklist Banner */}
-            <RealTvTestGuide
-              isConnected={connectionState === 'CONNECTED'}
-              ip={ip}
-              onSendKey={handleSendKey}
-              lastDispatchedKey={lastDispatchedKey}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Center Remote Control */}
+            <div className="lg:col-span-7 flex justify-center">
+              <MobileRemoteScreen
+                connectionState={connectionState}
+                targetModel={activeTv?.modelName || TARGET_MODEL}
+                ip={ip}
+                tokenMasked={tokenMasked}
+                onSendKey={handleSendKey}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                lastDispatchedKey={lastDispatchedKey}
+                activeTv={activeTv}
+                allTvs={allTvs}
+                onSelectTv={handleSelectAndConnectTV}
+                onOpenYouTubeHub={() => setIsYouTubeHubOpen(true)}
+                onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+              />
+            </div>
 
-            {/* Smartphone Remote Control View */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Smartphone Frame with Remote Controls */}
-              <div className="lg:col-span-6 flex justify-center">
-                <MobileRemoteScreen
-                  connectionState={connectionState}
-                  targetModel={activeTv?.modelName || TARGET_MODEL}
-                  ip={ip}
-                  tokenMasked={tokenMasked}
-                  onSendKey={handleSendKey}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
-                  lastDispatchedKey={lastDispatchedKey}
-                  activeTv={activeTv}
-                  allTvs={allTvs}
-                  onSelectTv={handleSelectAndConnectTV}
-                  onOpenYouTubeHub={() => setIsYouTubeHubOpen(true)}
-                  onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
-                  onConnect={handleConnect}
-                  onDisconnect={handleDisconnect}
-                />
-              </div>
+            {/* Desktop Companion Card: Active TV Overview & Natural Voice Guide */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* TV Quick Overview */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Tv className="w-4 h-4 text-indigo-600" />
+                    Aktif TV Durumu
+                  </span>
+                  <button
+                    onClick={() => setActiveTab('devices')}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
+                  >
+                    TV Değiştir →
+                  </button>
+                </div>
 
-              {/* Native React Native / Expo Info & Live Log Card */}
-              <div className="lg:col-span-6 space-y-4">
-                {/* Active TV Status Summary */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Tv className="w-4 h-4 text-indigo-600" />
-                      Aktif Kumanda Edilen TV
-                    </span>
-                    <button
-                      onClick={() => setActiveTab('devices')}
-                      className="text-[11px] text-indigo-600 hover:underline font-semibold"
-                    >
-                      Tüm TV'leri Yönet →
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-slate-900">
+                      <p className="text-base font-bold text-slate-900">
                         {activeTv?.customName || activeTv?.name || 'Samsung Smart TV'}
                       </p>
                       <p className="text-xs font-mono text-slate-500 mt-0.5">
                         {ip}:{port} • {activeTv?.modelName || TARGET_MODEL}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                        connectionState === 'CONNECTED'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        {connectionState === 'CONNECTED'
-                          ? 'BAĞLI'
-                          : connectionState === 'CONNECTING'
-                          ? 'BAĞLANIYOR'
-                          : connectionState === 'PAIRING'
-                          ? 'EŞLEŞİYOR'
-                          : connectionState === 'ERROR'
-                          ? 'HATA'
-                          : 'BAĞLI DEĞİL'}
-                      </span>
-                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      connectionState === 'CONNECTED'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : connectionState === 'PAIRING'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : connectionState === 'CONNECTING'
+                        ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {connectionState === 'CONNECTED'
+                        ? 'BAĞLI'
+                        : connectionState === 'PAIRING'
+                        ? 'EŞLEŞİYOR'
+                        : connectionState === 'CONNECTING'
+                        ? 'BAĞLANIYOR'
+                        : 'BAĞLANTI YOK'}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                    <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                      Komut Beyaz Listesi Aktif
+                    </span>
+                    <span className="font-mono text-slate-500">
+                      Token: {tokenMasked || 'Yok'}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Expo Codebase Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                      <FolderCode className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-900">
-                        React Native / Expo Mobil Projesi Hazır
-                      </h3>
-                      <p className="text-[11px] text-slate-500">
-                        Tam yerel mobil kod tabanı <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">/mobile</code> dizininde mevcuttur.
-                      </p>
-                    </div>
+              {/* Natural Voice Guide Card */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <Mic className="w-4 h-4" />
                   </div>
-
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 space-y-1.5 font-mono">
-                    <p className="font-bold text-indigo-950">Fiziksel Android / iOS cihazınızda çalıştırmak için:</p>
-                    <p className="text-slate-600">$ cd mobile</p>
-                    <p className="text-slate-600">$ npm install</p>
-                    <p className="text-slate-600">$ npx expo start</p>
-                    <p className="text-slate-500 text-[10px] pt-1">
-                      Samsung TV'niz ile aynı Wi-Fi ağına bağlıyken Expo Go uygulamasında terminaldeki QR kodu okutun!
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Doğal Sesli Komutlar
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Kumandadaki mikrofona basarak konuşun
                     </p>
                   </div>
+                </div>
 
-                  <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      Sıkı Beyaz Liste Doğrulayıcı Etkin
-                    </span>
-                    <span className="font-mono text-slate-400">Port 8002 WSS</span>
+                <div className="space-y-2 text-xs">
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <span className="font-semibold text-slate-800">"Sesi 20 yap"</span>
+                    <span className="text-[11px] text-indigo-600 font-mono">Hedef ses düzeyi</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <span className="font-semibold text-slate-800">"Sesi 5 artır" / "Kıs"</span>
+                    <span className="text-[11px] text-indigo-600 font-mono">Kademeli ses</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <span className="font-semibold text-slate-800">"YouTube'u aç"</span>
+                    <span className="text-[11px] text-red-600 font-mono">Uygulama başlat</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <span className="font-semibold text-slate-800">"Kanal değiştir" / "Ana menü"</span>
+                    <span className="text-[11px] text-slate-600 font-mono">Gezinme</span>
                   </div>
                 </div>
 
-                {/* Compact Live Telemetry Log */}
-                <LiveLogViewer
-                  logs={logs}
-                  onClearLogs={handleClearLogs}
-                />
+                <div className="pt-1 text-center">
+                  <button
+                    onClick={() => setIsVoiceAssistantOpen(true)}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
+                  >
+                    Detaylı Ses & Yapay Zeka Laboratuvarı →
+                  </button>
+                </div>
+              </div>
+
+              {/* Developer & Diagnostics Switcher */}
+              <div className="bg-slate-50 rounded-3xl border border-slate-200 p-4 text-xs flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800">Gelişmiş Tanılama & Testler</p>
+                  <p className="text-slate-500 text-[11px]">Canlı loglar, donanım kontrol listesi ve React Native Expo kılavuzu</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('studio')}
+                  className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-colors cursor-pointer text-xs shrink-0"
+                >
+                  Tanılama
+                </button>
               </div>
             </div>
           </div>
@@ -521,6 +541,14 @@ export default function App() {
         {/* TAB 3: Studio & Diagnostics View */}
         {activeTab === 'studio' && (
           <div className="space-y-6">
+            {/* Real TV Verification Checklist Banner */}
+            <RealTvTestGuide
+              isConnected={connectionState === 'CONNECTED'}
+              ip={ip}
+              onSendKey={handleSendKey}
+              lastDispatchedKey={lastDispatchedKey}
+            />
+
             {/* Connection & Pairing Control */}
             <ConnectionPanel
               ip={ip}
@@ -553,6 +581,41 @@ export default function App() {
                 onLaunchYouTubeProbe={handleLaunchYouTubeProbe}
                 onOpenYouTubeHub={() => setIsYouTubeHubOpen(true)}
               />
+            </div>
+
+            {/* Expo Native Codebase Guide Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <FolderCode className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    React Native / Expo Mobil Projesi Hazır
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Tam yerel mobil kod tabanı <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">/mobile</code> dizininde mevcuttur.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 space-y-1.5 font-mono">
+                <p className="font-bold text-indigo-950">Fiziksel Android / iOS cihazınızda çalıştırmak için:</p>
+                <p className="text-slate-600">$ cd mobile</p>
+                <p className="text-slate-600">$ npm install</p>
+                <p className="text-slate-600">$ npx expo start</p>
+                <p className="text-slate-500 text-[10px] pt-1">
+                  Samsung TV'niz ile aynı Wi-Fi ağına bağlıyken Expo Go uygulamasında terminaldeki QR kodu okutun!
+                </p>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  Sıkı Beyaz Liste Doğrulayıcı Etkin
+                </span>
+                <span className="font-mono text-slate-400">Port 8002 WSS</span>
+              </div>
             </div>
 
             {/* Full Live Event Stream / Log Terminal */}

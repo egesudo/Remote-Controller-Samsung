@@ -68,8 +68,8 @@ export const DeviceHeader: React.FC<DeviceHeaderProps> = ({
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
                 Samsung Akıllı TV Uzaktan Kumanda
               </h1>
-              <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-mono">
-                Faz 4: Güvenli İletişim Motoru
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
+                TU8500 Serisi
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-3">

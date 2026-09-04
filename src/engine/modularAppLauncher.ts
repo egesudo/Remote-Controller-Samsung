@@ -273,49 +273,51 @@ export class ModularAppLauncher implements IAppLauncher {
       this.trackPendingLaunchFn(intent.targetAppId, intent.appName);
     }
 
+    // If WebSocket is not in CONNECTED state, we cannot transmit via WSS
+    if (!isConnected) {
+      this.log(
+        'warn',
+        `[AppLauncher:BLOCKED] TV ile aktif WebSocket bağlantısı bulunmuyor (TV: ${host || 'Bilinmiyor'}). ${intent.appName} (ID: ${intent.targetAppId}) uygulamasını açabilmek için TV'nin açık ve Port 8002 (WSS) üzerinden bağlı olması gerekir. Lütfen önce TV'ye bağlanın.`
+      );
+      return false;
+    }
+
     // Attempt 1: Transmit via Active Authenticated WebSocket (Port 8002 WSS)
     // This is the verified authoritative channel for T-NKLDEUC-2740.1 firmware
     if (this.sendRawPacketFn || this.emitSocketEvent) {
-      if (!isConnected) {
-        this.log(
-          'warn',
-          `[AppLauncher] WebSocket is not in CONNECTED state. TV at ${host || 'unknown'} requires an authenticated WSS session on port 8002 to launch apps.`
-        );
-      } else {
+      this.log(
+        'info',
+        `[AppLauncher:DEBUG] Transmitting verified payload for ${intent.appName} (appId: string = "${intent.targetAppId}", action_type: "${intent.actionType}") via WebSocket...`
+      );
+      this.log(
+        'info',
+        `[AppLauncher] Dispatched EDEN launch payload to TV host:`,
+        intent.edenPayload
+      );
+
+      let edenSent = false;
+      if (this.sendRawPacketFn) {
+        edenSent = this.sendRawPacketFn(intent.edenPayload);
+      } else if (this.emitSocketEvent) {
+        edenSent = this.emitSocketEvent('ed.apps.launch', intent.edenPayload.params.data);
+      }
+
+      // Also transmit Tizen 5.5+ standard ms.application.start frame for dual-firmware resilience
+      if (this.sendRawPacketFn) {
         this.log(
           'info',
-          `[AppLauncher:DEBUG] Transmitting verified payload for ${intent.appName} (appId: string = "${intent.targetAppId}", action_type: "${intent.actionType}") via WebSocket...`
+          `[AppLauncher] Dispatched Tizen 5.5+ ms.application.start frame to TV:`,
+          intent.appStartPayload
         );
+        this.sendRawPacketFn(intent.appStartPayload);
+      }
+
+      if (edenSent) {
         this.log(
-          'info',
-          `[AppLauncher] Dispatched EDEN launch payload to TV host:`,
-          intent.edenPayload
+          'success',
+          `[AppLauncher] ✓ Application launch command transmitted successfully to TV (${host}:8002). Awaiting TV confirmation...`
         );
-
-        let edenSent = false;
-        if (this.sendRawPacketFn) {
-          edenSent = this.sendRawPacketFn(intent.edenPayload);
-        } else if (this.emitSocketEvent) {
-          edenSent = this.emitSocketEvent('ed.apps.launch', intent.edenPayload.params.data);
-        }
-
-        // Also transmit Tizen 5.5+ standard ms.application.start frame for dual-firmware resilience
-        if (this.sendRawPacketFn) {
-          this.log(
-            'info',
-            `[AppLauncher] Dispatched Tizen 5.5+ ms.application.start frame to TV:`,
-            intent.appStartPayload
-          );
-          this.sendRawPacketFn(intent.appStartPayload);
-        }
-
-        if (edenSent) {
-          this.log(
-            'success',
-            `[AppLauncher] ✓ Application launch command transmitted successfully to TV (${host}:8002). Awaiting TV confirmation...`
-          );
-          return true;
-        }
+        return true;
       }
     }
 

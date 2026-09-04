@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AlertTriangle,
   Cast,
   CheckCircle2,
   ExternalLink,
@@ -23,6 +24,7 @@ import {
   tvController,
   tvDeviceManager,
   youTubeService,
+  type ConnectionState,
   type YouTubeAuthStatus,
   type YouTubePlaylist,
   type YouTubeVideo,
@@ -42,6 +44,7 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
   const [activeTvName, setActiveTvName] = useState('Samsung Smart TV');
   const [activeTvIp, setActiveTvIp] = useState('');
   const [isTvConnected, setIsTvConnected] = useState(false);
+  const [connState, setConnState] = useState<ConnectionState>(tvController.getConnectionState());
 
   // Deep Link State
   const [videoInput, setVideoInput] = useState('');
@@ -69,7 +72,9 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
         setActiveTvName(activeTv.customName || activeTv.name || 'Samsung Smart TV');
         setActiveTvIp(activeTv.ip);
       }
-      setIsTvConnected(tvController.getConnectionState() === 'CONNECTED');
+      const state = tvController.getConnectionState();
+      setConnState(state);
+      setIsTvConnected(state === 'CONNECTED');
     };
 
     updateTvInfo();
@@ -130,6 +135,31 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
 
   // Launch YouTube app on TV
   const handleLaunchYouTubeApp = async (videoId?: string) => {
+    // Pre-flight check: TV must be connected via Port 8002 WSS
+    const currentConn = tvController.getConnectionState();
+    if (currentConn !== 'CONNECTED') {
+      if (currentConn === 'ERROR') {
+        setLaunchMessage({
+          type: 'error',
+          text: `TV bağlı değil (SSL sertifikası onayı gerekiyor). Lütfen yukarıdaki "1. TV SSL Sertifikasını Aç" butonuna tıklayıp onaylayın, ardından TV'ye bağlanın.`,
+        });
+      } else if (currentConn === 'PAIRING') {
+        setLaunchMessage({
+          type: 'info',
+          text: `TV eşleştirme bekliyor: Lütfen Samsung TV ekranındaki "İzin Ver" (Allow) uyarısını kumandanızla onaylayın.`,
+        });
+      } else {
+        setLaunchMessage({
+          type: 'info',
+          text: `TV bağlı değil. TV bağlantısı (${activeTvIp || '192.168.1.102'}:8002) başlatılıyor...`,
+        });
+        if (activeTvIp) {
+          tvController.connect({ host: activeTvIp, port: 8002 });
+        }
+      }
+      return;
+    }
+
     setIsLaunching(true);
     setLaunchMessage({ type: 'info', text: videoId ? `Video ${activeTvName} ekranına gönderiliyor...` : `YouTube ${activeTvName} üzerinde başlatılıyor...` });
 
@@ -149,7 +179,7 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
       } else {
         setLaunchMessage({
           type: 'info',
-          text: `YouTube başlatma komutu ${activeTvIp || 'TV'} adresine iletildi. Uygulama açılmazsa TV'nin açık olduğundan emin olun.`,
+          text: `YouTube başlatma komutu iletildi. Uygulama açılmazsa TV'nin açık ve aynı ağda olduğunu kontrol edin.`,
         });
       }
     } catch {
@@ -295,6 +325,88 @@ export const YouTubeHubModal: React.FC<YouTubeHubModalProps> = ({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* TV Connection & SSL Alert when not CONNECTED */}
+          {!isTvConnected && (
+            <div
+              id="youtube-tv-connection-alert"
+              className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-200 flex-1">
+                  <p className="font-bold text-sm text-amber-300">
+                    {connState === 'ERROR'
+                      ? 'Samsung TV Bağlantısı & SSL İzni Gerekli'
+                      : connState === 'PAIRING'
+                      ? 'TV Ekranında Onay Bekleniyor (Eşleştirme)'
+                      : connState === 'CONNECTING'
+                      ? 'TV\'ye Güvenli WSS Bağlantısı Kuruluyor...'
+                      : 'Samsung TV\'ye Bağlı Değil'}
+                  </p>
+                  <p className="mt-1 leading-relaxed text-amber-100/90">
+                    {connState === 'ERROR'
+                      ? `Tarayıcınız, Samsung TV'nin (${activeTvIp || '192.168.1.102'}:8002) kendinden imzalı SSL sertifikasını engelliyor olabilir. YouTube'u TV'de açabilmek için aşağıdaki 2 adımı tamamlayın:`
+                      : connState === 'PAIRING'
+                      ? 'TV ekranının sağ üstünde beliren "İzin Ver" (Allow) bildirimini fiziksel kumandanızla onaylayın. Onaylandığında YouTube başlatılabilir.'
+                      : connState === 'CONNECTING'
+                      ? 'Port 8002 (WSS) üzerinden TV ile el sıkışılıyor, lütfen bekleyin...'
+                      : 'YouTube uygulamasını TV\'de açabilmek için TV\'nin açık ve yerel ağ (Port 8002 WSS) üzerinden bağlı olması gerekir.'}
+                  </p>
+                </div>
+              </div>
+
+              {connState === 'ERROR' && (
+                <div className="space-y-2 pt-1 border-t border-amber-800/40">
+                  <div className="text-[11px] text-amber-200/90 bg-amber-900/30 p-2.5 rounded-lg">
+                    <span className="font-semibold text-amber-300">Nasıl Onaylanır?</span>
+                    <ol className="list-decimal list-inside mt-1 space-y-0.5 text-amber-100">
+                      <li>Aşağıdaki <strong>"1. TV SSL Sertifikasını Aç"</strong> linkine tıklayın.</li>
+                      <li>Açılan sekmede <strong>"Gelişmiş" (Advanced)</strong> butonuna basın.</li>
+                      <li>En alttaki <strong>"{activeTvIp || '192.168.1.102'} sitesine ilerle (güvensiz)"</strong> seçeneğine tıklayın.</li>
+                      <li>Buraya dönüp <strong>"2. TV'ye Yeniden Bağlan"</strong> butonuna basın.</li>
+                    </ol>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <a
+                      href={`https://${activeTvIp || '192.168.1.102'}:8002/api/v2/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                    >
+                      <span>1. TV SSL Sertifikasını Aç</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      onClick={async () => {
+                        if (activeTvIp) {
+                          await tvController.connect({ host: activeTvIp, port: 8002 });
+                        }
+                      }}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>2. TV'ye Yeniden Bağlan</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(connState === 'DISCONNECTED' || connState === 'PAIRING') && (
+                <button
+                  onClick={async () => {
+                    if (activeTvIp) {
+                      await tvController.connect({ host: activeTvIp, port: 8002 });
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <Tv className="w-4 h-4" />
+                  <span>{connState === 'PAIRING' ? 'TV\'ye Tekrar Bağlanmayı Dene' : 'Samsung TV\'ye Bağlan (Port 8002 WSS)'}</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Quick Launch & TV Media Controls Bar */}
           <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">

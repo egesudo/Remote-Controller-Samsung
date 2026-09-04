@@ -143,10 +143,12 @@ export class SamsungWebSocket {
         url += `&token=${encodeURIComponent(this.currentToken)}`;
       }
 
-      this.setState(this.currentToken ? 'CONNECTING' : 'PAIRING');
+      // Always enter CONNECTING state during socket handshake.
+      // PAIRING state is only entered once the socket physically opens and TV shows the pairing dialog.
+      this.setState('CONNECTING');
       this.events.onLog?.(
         'info',
-        `TV WebSocket soket bağlantısı başlatılıyor: ${protocol}${this.currentHost}:${this.currentPort} (Jeton: ${this.currentToken ? 'Mevcut' : 'Yok - Eşleştirme Gerekli'})`
+        `TV WebSocket soket bağlantısı başlatılıyor: ${protocol}${this.currentHost}:${this.currentPort} (Jeton: ${this.currentToken ? 'Mevcut' : 'Yok - Bağlantı sonrasında eşleştirme yapılacak'})`
       );
 
       try {
@@ -178,7 +180,7 @@ export class SamsungWebSocket {
           this.setState('PAIRING');
           this.events.onLog?.(
             'warn',
-            'Jeton henüz onaylanmadı: TV ekranındaki "İzin Ver" (Allow) uyarısını kumandanızla onaylayın.'
+            'TV ile güvenli WebSocket oturumu açıldı. TV ekranında beliren "İzin Ver" (Allow) bildirimini kumandanızla onaylayın.'
           );
         }
       };
@@ -202,11 +204,11 @@ export class SamsungWebSocket {
         const isPort8002 = this.currentPort === 8002;
         const certUrl = `https://${this.currentHost}:8002/api/v2/`;
         const logMsg = isPort8002
-          ? `WebSocket bağlantı hatası. Port 8002 (WSS) için TV'nin kendinden imzalı SSL sertifikasını tarayıcınızda onaylayın (${certUrl}) veya TV'nin açık ve ${this.currentHost} adresinde yerel ağda erişilebilir olduğunu kontrol edin.`
+          ? `WebSocket bağlantı hatası. Port 8002 (WSS) için TV'nin kendinden imzalı SSL sertifikasını tarayıcınızda onaylayın (${certUrl}) veya TV'nin açık, IP Uzaktan Kumanda (IP Remote) ayarının AÇIK ve ${this.currentHost} adresinde yerel ağda erişilebilir olduğunu kontrol edin.`
           : `WebSocket bağlantı hatası. TV'nin açık ve ${this.currentHost}:${this.currentPort} adresinde yerel ağda erişilebilir olduğundan emin olun.`;
 
         const userErrMsg = isPort8002
-          ? `Samsung TV'ye (${this.currentHost}:${this.currentPort}) bağlanılamadı. Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. Lütfen SSL onay linkine tıklayın ve TV'nin açık olduğundan emin olun.`
+          ? `Samsung TV'ye (${this.currentHost}:${this.currentPort}) bağlanılamadı. Tarayıcınız TV'nin SSL sertifikasını engelliyor olabilir. Lütfen SSL onay linkine (${certUrl}) tıklayıp 'Gelişmiş > İlerle' seçin ve TV'de IP Uzaktan Kumanda ayarının açık olduğunu doğrulayın.`
           : `Samsung TV'ye (${this.currentHost}:${this.currentPort}) bağlanılamadı. TV'nin açık ve aynı yerel ağda (Wi-Fi) olduğunu doğrulayın.`;
 
         this.events.onLog?.('error', logMsg);
